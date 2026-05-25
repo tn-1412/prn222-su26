@@ -1,4 +1,4 @@
-@model RaceMS.Entities.NguyenDNT.Models.JockeyNguyenDnt
+@* @model RaceMS.Entities.NguyenDNT.Models.JockeyNguyenDnt
 
 @{
     ViewData["Title"] = "Create";
@@ -55,4 +55,412 @@
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+} *@
+@model RaceMS.Entities.NguyenDNT.Models.JockeyNguyenDnt
+
+@{
+    ViewData["Title"] = "Thêm Jockey";
+}
+
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@@600;700&family=Inter:wght@@400;500;600&display=swap');
+
+    .jockey-create-wrapper {
+        max-width: 860px;
+        margin: 2rem auto;
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* ── HEADER ── */
+    .jc-header {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
+        border-radius: 16px 16px 0 0;
+        padding: 2.5rem 2.5rem 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .jc-header::before {
+        content: '';
+        position: absolute;
+        top: -40px;
+        right: -40px;
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        background: rgba(139, 92, 246, 0.15);
+    }
+
+    .jc-header::after {
+        content: '';
+        position: absolute;
+        bottom: -30px;
+        right: 80px;
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: rgba(139, 92, 246, 0.08);
+    }
+
+    .jc-header-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(139, 92, 246, 0.2);
+        border: 1px solid rgba(139, 92, 246, 0.4);
+        color: #c4b5fd;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 4px 12px;
+        border-radius: 20px;
+        margin-bottom: 1rem;
+    }
+
+    .jc-header h1 {
+        font-family: 'Playfair Display', serif;
+        color: #ffffff;
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0 0 0.4rem;
+        letter-spacing: 0.01em;
+    }
+
+    .jc-header p {
+        color: #94a3b8;
+        font-size: 0.9rem;
+        margin: 0;
+    }
+
+    /* ── BODY CARD ── */
+    .jc-body {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-top: none;
+        border-radius: 0 0 16px 16px;
+        padding: 2rem 2.5rem 2.5rem;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+    }
+
+    /* ── SECTION LABEL ── */
+    .jc-section-label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #8b5cf6;
+        margin: 1.8rem 0 1.2rem;
+    }
+
+    .jc-section-label::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: linear-gradient(to right, #e9d5ff, transparent);
+    }
+
+    .jc-section-label:first-child {
+        margin-top: 0;
+    }
+
+    /* ── GRID ── */
+    .jc-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.2rem;
+    }
+
+    .jc-grid .full-width {
+        grid-column: 1 / -1;
+    }
+
+    /* ── FIELD ── */
+    .jc-field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .jc-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #374151;
+        letter-spacing: 0.01em;
+    }
+
+    .jc-label .required {
+        color: #ef4444;
+        margin-left: 2px;
+    }
+
+    .field-wrapper {
+        position: relative;
+    }
+
+    .field-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9ca3af;
+        font-size: 1rem;
+        pointer-events: none;
+        line-height: 1;
+    }
+
+    .field-input {
+        width: 100%;
+        padding: 10px 14px 10px 40px;
+        border: 1.5px solid #d1d5db;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-family: 'Inter', sans-serif;
+        color: #111827;
+        background: #fafafa;
+        transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+        box-sizing: border-box;
+    }
+
+    .field-input:focus {
+        outline: none;
+        border-color: #8b5cf6;
+        background: #ffffff;
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.12);
+    }
+
+    .field-hint {
+        font-size: 0.73rem;
+        color: #9ca3af;
+        margin-top: 2px;
+    }
+
+    .field-error {
+        font-size: 0.75rem;
+        color: #ef4444;
+        margin-top: 2px;
+    }
+
+    /* ── CHECKBOX (IsActive) ── */
+    .jc-checkbox-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        background: #f8f7ff;
+        border: 1.5px solid #e9d5ff;
+        border-radius: 10px;
+    }
+
+    .jc-checkbox-row input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: #8b5cf6;
+        cursor: pointer;
+    }
+
+    .jc-checkbox-row label {
+        font-size: 0.88rem;
+        font-weight: 500;
+        color: #374151;
+        cursor: pointer;
+        margin: 0;
+    }
+
+    /* ── VALIDATION SUMMARY ── */
+    .jc-validation-summary {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 10px;
+        padding: 12px 16px;
+        margin-bottom: 1.5rem;
+        font-size: 0.85rem;
+        color: #b91c1c;
+    }
+
+    /* ── ACTIONS ── */
+    .jc-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .btn-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: #6b7280;
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-decoration: none;
+        padding: 8px 16px;
+        border-radius: 8px;
+        border: 1.5px solid #e5e7eb;
+        transition: all 0.2s;
+    }
+
+    .btn-back:hover {
+        color: #374151;
+        border-color: #9ca3af;
+        background: #f9fafb;
+        text-decoration: none;
+    }
+
+    .btn-create {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: linear-gradient(135deg, #7c3aed, #6d28d9);
+        color: #ffffff;
+        font-size: 0.9rem;
+        font-weight: 600;
+        padding: 11px 28px;
+        border-radius: 10px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 4px 14px rgba(109, 40, 217, 0.35);
+    }
+
+    .btn-create:hover {
+        background: linear-gradient(135deg, #6d28d9, #5b21b6);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(109, 40, 217, 0.45);
+    }
+
+    .btn-create:active {
+        transform: translateY(0);
+    }
+</style>
+
+<div class="jockey-create-wrapper">
+
+    <!-- HEADER -->
+    <div class="jc-header">
+        <div class="jc-header-badge">
+            🏇 Race Management System
+        </div>
+        <h1>Thêm Jockey Mới</h1>
+        <p>Điền đầy đủ thông tin để đăng ký tay đua vào hệ thống</p>
+    </div>
+
+    <!-- BODY -->
+    <div class="jc-body">
+
+        <form asp-action="Create" method="post">
+            @Html.AntiForgeryToken()
+
+            <div asp-validation-summary="ModelOnly" class="jc-validation-summary text-danger"></div>
+
+            <!-- SECTION: Thông tin cá nhân -->
+            <div class="jc-section-label">Thông tin cá nhân</div>
+
+            <div class="jc-grid">
+
+                <!-- Họ và tên -->
+                <div class="jc-field full-width">
+                    <label class="jc-label" asp-for="FullName">Họ và tên <span class="required">*</span></label>
+                    <div class="field-wrapper">
+                        <span class="field-icon">👤</span>
+                        <input asp-for="FullName" class="field-input" placeholder="Nguyễn Văn A" />
+                    </div>
+                    <span asp-validation-for="FullName" class="field-error"></span>
+                </div>
+
+                <!-- Số điện thoại -->
+                <div class="jc-field">
+                    <label class="jc-label" asp-for="PhoneNumber">Số điện thoại</label>
+                    <div class="field-wrapper">
+                        <span class="field-icon">📞</span>
+                        <input asp-for="PhoneNumber" class="field-input" placeholder="0912 345 678" />
+                    </div>
+                    <span asp-validation-for="PhoneNumber" class="field-error"></span>
+                </div>
+
+                <!-- Email -->
+                <div class="jc-field">
+                    <label class="jc-label" asp-for="Email">Email</label>
+                    <div class="field-wrapper">
+                        <span class="field-icon">✉️</span>
+                        <input asp-for="Email" class="field-input" placeholder="example@racems.vn" type="email" />
+                    </div>
+                    <span asp-validation-for="Email" class="field-error"></span>
+                </div>
+
+                <!-- Ngày sinh -->
+                <div class="jc-field">
+                    <label class="jc-label" asp-for="DateOfBirth">Ngày sinh</label>
+                    <div class="field-wrapper">
+                        <span class="field-icon">🎂</span>
+                        <input asp-for="DateOfBirth" class="field-input" type="date" />
+                    </div>
+                    <span asp-validation-for="DateOfBirth" class="field-error"></span>
+                </div>
+
+            </div>
+
+            <!-- SECTION: Thông tin bằng cấp -->
+            <div class="jc-section-label">Thông tin bằng cấp</div>
+
+            <div class="jc-grid">
+
+                <!-- Mã giấy phép -->
+                <div class="jc-field full-width">
+                    <label class="jc-label" asp-for="LicenseCode">Mã giấy phép <span class="required">*</span></label>
+                    <div class="field-wrapper">
+                        <span class="field-icon">🪪</span>
+                        <input asp-for="LicenseCode" class="field-input" placeholder="JCK-2024-XXXXX" />
+                    </div>
+                    <div class="field-hint">Mã do Liên đoàn Đua ngựa Quốc gia cấp, gồm tiền tố JCK và 5 chữ số</div>
+                    <span asp-validation-for="LicenseCode" class="field-error"></span>
+                </div>
+
+                <!-- Cân nặng -->
+                <div class="jc-field">
+                    <label class="jc-label" asp-for="Weight">Cân nặng (kg)</label>
+                    <div class="field-wrapper">
+                        <span class="field-icon">⚖️</span>
+                        <input asp-for="Weight" class="field-input" placeholder="55.0" type="number" step="0.1" min="40" max="80" />
+                    </div>
+                    <div class="field-hint">Quy định: 40 – 80 kg, đo trước mỗi mùa giải</div>
+                    <span asp-validation-for="Weight" class="field-error"></span>
+                </div>
+
+                <!-- Trạng thái -->
+                <div class="jc-field" style="justify-content: flex-end; padding-bottom: 2px;">
+                    <label class="jc-label">Trạng thái hoạt động</label>
+                    <div class="jc-checkbox-row">
+                        <input asp-for="IsActive" type="checkbox" id="IsActive" />
+                        <label for="IsActive">Jockey đang hoạt động</label>
+                    </div>
+                    <div class="field-hint">Bỏ chọn nếu jockey tạm dừng hoặc đã nghỉ hưu</div>
+                </div>
+
+            </div>
+
+            <!-- ACTIONS -->
+            <div class="jc-actions">
+                <a asp-action="Index" class="btn-back">
+                    ← Quay lại danh sách
+                </a>
+                <button type="submit" class="btn-create">
+                    ✚ Tạo Jockey
+                </button>
+            </div>
+
+        </form>
+
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 }

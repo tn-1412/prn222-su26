@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using RaceMS_Repositories.NguyenDNT;
 using RaceMS_Repositories.NguyenDNT.DBContext;
 using RaceMS_Services.NguyenDNT;
 
@@ -6,6 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddScoped<JockeyNguyenDntRepository>();
 builder.Services.AddScoped<IJockeyNguyenDntService, JockeyNguyenDntService>();
 builder.Services.AddScoped<IRegistrationNguyenDntService, RegistrationNguyenDntService>();
 
