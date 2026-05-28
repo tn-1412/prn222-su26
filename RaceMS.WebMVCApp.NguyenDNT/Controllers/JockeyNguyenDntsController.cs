@@ -1,9 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RaceMS.Entities.NguyenDNT.Models;
 using RaceMS_Services.NguyenDNT;
 
 namespace RaceMS.WebMVCApp.NguyenDNT.Controllers
 {
+    [Authorize]
     public class JockeyNguyenDntsController : Controller
     {
         private readonly IJockeyNguyenDntService _jockeyService;

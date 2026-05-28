@@ -1,9 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RaceMS.WebMVCApp.NguyenDNT.Models;
 using System.Diagnostics;
 
 namespace RaceMS.WebMVCApp.NguyenDNT.Controllers
 {
+    [Authorize]
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;

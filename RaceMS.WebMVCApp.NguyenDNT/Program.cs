@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using RaceMS_Repositories.NguyenDNT;
 using RaceMS_Repositories.NguyenDNT.DBContext;
@@ -5,23 +6,31 @@ using RaceMS_Services.NguyenDNT;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddScoped<JockeyNguyenDntRepository>();
-builder.Services.AddScoped<IJockeyNguyenDntService, JockeyNguyenDntService>();
-builder.Services.AddScoped<IRegistrationNguyenDntService, RegistrationNguyenDntService>();
 
 builder.Services.AddDbContext<RaceManagementDBContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("Data")));
 
+builder.Services.AddScoped<JockeyNguyenDntRepository>();
+builder.Services.AddScoped<IJockeyNguyenDntService, JockeyNguyenDntService>();
+builder.Services.AddScoped<IRegistrationNguyenDntService, RegistrationNguyenDntService>();
+
+builder.Services.AddScoped<SystemUserAccountRepository>();
+builder.Services.AddScoped<ISystemUserAccountService, SystemUserAccountService>();
+
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+    {
+        options.LoginPath = new PathString("/Account/Login");
+        options.AccessDeniedPath = new PathString("/Account/Forbidden");
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+    });
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -30,10 +39,11 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Account}/{action=Login}/{id?}");
 
 app.Run();

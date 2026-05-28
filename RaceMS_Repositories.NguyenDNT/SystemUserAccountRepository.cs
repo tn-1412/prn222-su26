@@ -15,7 +15,8 @@ namespace RaceMS_Repositories.NguyenDNT
         public SystemUserAccountRepository(RaceManagementDBContext context) => _context = context;
         public async Task<SystemUserAccount> GetUserAccountAsync(string userName, string password)
         {
-             return await _context.SystemUserAccounts.FirstOrDefaultAsync(x => x.UserName == userName && x.Password == password && x.IsActive);
+            return await _context.SystemUserAccounts.FirstOrDefaultAsync(
+                x => (x.UserName == userName || x.Email == userName) && x.Password == password && x.IsActive);
         }
     }
 }
