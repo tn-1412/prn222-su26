@@ -202,7 +202,8 @@
         border: 1px solid #e2e8f0;
         border-top: none;
         border-radius: 0 0 16px 16px;
-        overflow: hidden;
+        overflow-x: auto;
+        overflow-y: hidden;
         box-shadow: 0 10px 40px rgba(0,0,0,.07);
     }
 
@@ -213,22 +214,112 @@
     }
 
     .jl-table thead {
-        background: #f8fafc;
-        border-bottom: 2px solid #e9d5ff;
+        background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%);
     }
 
     .jl-table thead th {
-        padding: 12px 16px;
+        padding: 13px 16px;
         font-size: .7rem;
         font-weight: 700;
         letter-spacing: .08em;
         text-transform: uppercase;
-        color: #6b21a8;
+        color: rgba(255,255,255,.88);
         white-space: nowrap;
+        border-bottom: 3px solid transparent;
     }
+
+    .jl-table thead th:nth-child(1) { border-bottom-color: #fbbf24; }
+    .jl-table thead th:nth-child(2) { border-bottom-color: #22d3ee; }
+    .jl-table thead th:nth-child(3) { border-bottom-color: #34d399; }
+    .jl-table thead th:nth-child(4) { border-bottom-color: #f87171; }
+    .jl-table thead th:nth-child(5) { border-bottom-color: #c084fc; }
+    .jl-table thead th:nth-child(6) { border-bottom-color: #fb923c; }
+    .jl-table thead th:nth-child(7) { border-bottom-color: #38bdf8; }
+    .jl-table thead th:nth-child(8) { border-bottom-color: #a78bfa; }
 
     .jl-table thead th:first-child { padding-left: 1.5rem; }
     .jl-table thead th:last-child  { padding-right: 1.5rem; text-align: center; }
+
+    /* ── PAGINATION OVERRIDE ── */
+    .page-list-table-jockeyTable {
+        margin-top: 20px !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 5px !important;
+        flex-wrap: wrap;
+        padding: 4px 0;
+    }
+
+    .table-pagination-pagination-num-jockeyTable,
+    .table-pagination-prev-btn-jockeyTable,
+    .table-pagination-next-btn-jockeyTable {
+        min-width: 38px !important;
+        height: 38px !important;
+        border-radius: 10px !important;
+        border: 2px solid #e2e8f0 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: .85rem !important;
+        font-weight: 600 !important;
+        padding: 0 10px !important;
+        transition: all .18s !important;
+        background: #fff !important;
+    }
+
+    .table-pagination-pagination-num-jockeyTable:hover,
+    .table-pagination-prev-btn-jockeyTable:hover,
+    .table-pagination-next-btn-jockeyTable:hover {
+        border-color: #7c3aed !important;
+        background: #f5f3ff !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 12px rgba(124,58,237,.2) !important;
+    }
+
+    .table-pagination-pagination-num-jockeyTable.active {
+        background: linear-gradient(135deg, #7c3aed, #4f46e5) !important;
+        border-color: transparent !important;
+        color: #fff !important;
+        box-shadow: 0 4px 14px rgba(124,58,237,.45) !important;
+        transform: translateY(-1px);
+    }
+
+    .more-btn-first-jockeyTable,
+    .more-btn-last-jockeyTable {
+        color: #9ca3af !important;
+        font-size: 1rem !important;
+        padding: 0 2px !important;
+        align-self: flex-end;
+        line-height: 1;
+    }
+
+    .table-pagination-jump-container-jockeyTable {
+        margin-left: auto !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        font-size: .82rem !important;
+        font-weight: 600 !important;
+        color: #6b7280 !important;
+    }
+
+    .table-pagination-jump-input-jockeyTable {
+        width: 44px !important;
+        height: 38px !important;
+        border: 2px solid #e2e8f0 !important;
+        border-radius: 10px !important;
+        text-align: center !important;
+        font-size: .875rem !important;
+        font-weight: 700 !important;
+        color: #4338ca !important;
+        background: #f5f3ff !important;
+        outline: none !important;
+    }
+
+    .table-pagination-jump-input-jockeyTable:focus {
+        border-color: #7c3aed !important;
+        box-shadow: 0 0 0 3px rgba(124,58,237,.15) !important;
+    }
 
     .jl-table tbody tr {
         border-bottom: 1px solid #f1f5f9;
@@ -451,7 +542,7 @@
                     <th>Thao tác</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="jockeyTableBody">
                 @if (!Model.Any())
                 {
                     <tr>
@@ -472,7 +563,9 @@
                         string initials = string.IsNullOrWhiteSpace(jockey.FullName)
                             ? "?"
                             : string.Join("", jockey.FullName.Split(' ').Where(w => w.Length > 0).TakeLast(2).Select(w => w[0]));
-                        <tr data-name="@jockey.FullName?.ToLower()"
+                        @* [DELETE FLOW - STEP 4] id="jockey-row-{id}" là target để JS xóa row khỏi DOM khi nhận sự kiện từ SignalR *@
+                        <tr id="jockey-row-@jockey.JockeyNguyenDntid"
+                            data-name="@jockey.FullName?.ToLower()"
                             data-email="@jockey.Email?.ToLower()"
                             data-license="@jockey.LicenseCode?.ToLower()"
                             data-status="@(jockey.IsActive ? "active" : "inactive")">
@@ -517,7 +610,10 @@
                                 <div class="action-group">
                                     <a asp-action="Edit" asp-route-id="@jockey.JockeyNguyenDntid" class="btn-action btn-edit" title="Chỉnh sửa">✏️</a>
                                     <a asp-action="Details" asp-route-id="@jockey.JockeyNguyenDntid" class="btn-action btn-detail" title="Chi tiết">👁</a>
-                                    <a asp-action="Delete" asp-route-id="@jockey.JockeyNguyenDntid" class="btn-action btn-del" title="Xóa">🗑</a>
+                                    @* [DELETE FLOW - STEP 1] Nút cũ: HTTP navigate → đã thay bằng SignalR bên dưới *@
+                                    @*<a asp-action="Delete" asp-route-id="@jockey.JockeyNguyenDntid" class="btn-action btn-del" title="Xóa">🗑</a>*@
+                                    @* [DELETE FLOW - STEP 1] Nút mới: invoke HubDelete_JockeyNguyenDnt qua SignalR *@
+                                    <button onclick="deleteJockey(@jockey.JockeyNguyenDntid)" class="btn-action btn-del" title="Xóa">🗑</button>
                                 </div>
                             </td>
                         </tr>
@@ -529,26 +625,80 @@
 </div>
 
 @section Scripts {
+<script src="~/js/signalr/dist/browser/signalr.min.js"></script>
+<script src="~/lib/table-pagination/table-pagination.js"></script>
 <script>
-    const searchInput   = document.getElementById('searchInput');
-    const statusFilter  = document.getElementById('statusFilter');
-    const rows          = document.querySelectorAll('#jockeyTable tbody tr[data-name]');
+    "use strict";
+
+    // [DELETE FLOW - STEP 2] Khởi tạo kết nối WebSocket tới MSRaceHub
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/msRaceHub", { withCredentials: true })
+        .build();
+
+    // [DELETE FLOW - STEP 3] Lắng nghe broadcast từ server sau khi xóa thành công
+    //   Server gọi: Clients.All.SendAsync("Receiver_DeleteJockeyNguyenDnt", jockeyId)
+    //   → tất cả browser đang mở trang đều nhận và xóa row tương ứng
+    connection.on("Receiver_DeleteJockeyNguyenDnt", function (jockeyId) {
+        // [DELETE FLOW - STEP 4] Tìm <tr id="jockey-row-{id}"> trong tbody và remove khỏi DOM
+        $('#jockeyTableBody').find(`tr[id='jockey-row-${jockeyId}']`).remove();
+    });
+
+    connection.on("DeleteError", function (message) {
+        const text = message.startsWith(":") ? message.slice(1) : message;
+        alert(text);
+    });
+
+    connection.start().catch(err => console.error(err.toString()));
+
+    // [DELETE FLOW - STEP 1] Gọi Hub method khi user click nút xóa
+    function deleteJockey(jockeyId) {
+        connection.invoke("HubDelete_JockeyNguyenDnt", jockeyId)
+            .catch(err => console.error(err.toString()));
+    }
+</script>
+<script>
+    const searchInput  = document.getElementById('searchInput');
+    const statusFilter = document.getElementById('statusFilter');
+    const rows         = document.querySelectorAll('#jockeyTable tbody tr[data-name]');
+
+    const paginationOpts = {
+        rowPerPage: 5,
+        paginationColor: '#7c3aed',
+        fontColor: '#6b21a8',
+        paginationStyle: 'bordered',
+        jumpPage: true
+    };
+
+    function initPagination() {
+        $('#jockeyTable').createTablePagination(paginationOpts);
+    }
 
     function filterTable() {
         const q      = searchInput.value.toLowerCase().trim();
         const status = statusFilter.value;
 
-        rows.forEach(row => {
-            const matchSearch = !q ||
-                row.dataset.name?.includes(q) ||
-                row.dataset.email?.includes(q) ||
-                row.dataset.license?.includes(q);
+        if (q || status) {
+            // Bypass pagination: show all rows then apply filter
+            $('#jockeyTable tbody tr').show();
+            $('.page-list-table-jockeyTable').hide();
 
-            const matchStatus = !status || row.dataset.status === status;
-
-            row.style.display = (matchSearch && matchStatus) ? '' : 'none';
-        });
+            rows.forEach(row => {
+                const matchSearch = !q ||
+                    (row.dataset.name    && row.dataset.name.includes(q))    ||
+                    (row.dataset.email   && row.dataset.email.includes(q))   ||
+                    (row.dataset.license && row.dataset.license.includes(q));
+                const matchStatus = !status || row.dataset.status === status;
+                row.style.display = (matchSearch && matchStatus) ? '' : 'none';
+            });
+        } else {
+            // No filter — restore pagination from scratch
+            initPagination();
+        }
     }
+
+    $(function () {
+        initPagination();
+    });
 
     searchInput.addEventListener('input', filterTable);
     statusFilter.addEventListener('change', filterTable);

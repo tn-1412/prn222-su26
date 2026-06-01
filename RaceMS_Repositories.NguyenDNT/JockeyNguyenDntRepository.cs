@@ -23,6 +23,12 @@ namespace RaceMS_Repositories.NguyenDNT
         {
             var jockey = await _context.JockeyNguyenDnts.FindAsync(id);
             if (jockey == null) return false;
+
+            var hasRegistrations = await _context.RegistrationNguyenDnts
+                .AnyAsync(r => r.JockeyNguyenDntid == id);
+            if (hasRegistrations)
+                throw new InvalidOperationException(":Không thể xóa jockey này vì đang có đăng ký liên kết.");
+
             _context.JockeyNguyenDnts.Remove(jockey);
             return await _context.SaveChangesAsync() > 0;
         }
