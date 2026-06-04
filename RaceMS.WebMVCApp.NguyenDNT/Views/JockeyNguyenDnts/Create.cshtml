@@ -449,9 +449,14 @@
                 <a asp-action="Index" class="btn-back">
                     ← Quay lại danh sách
                 </a>
-                <button type="submit" class="btn-create">
-                    ✚ Tạo Jockey
-                </button>
+                <div style="display:flex; gap:10px;">
+                    <button type="submit" class="btn-create" style="background:linear-gradient(135deg,#0369a1,#0284c7); box-shadow:0 4px 14px rgba(3,105,161,.35);">
+                        ✚ Tạo Jockey
+                    </button>
+                    <button type="button" id="btnHubCreate" class="btn-create">
+                        ⚡ Tạo via SignalR
+                    </button>
+                </div>
             </div>
 
         </form>
@@ -460,7 +465,48 @@
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+    <script src="~/js/signalr/dist/browser/signalr.min.js"></script>
+    <script>
+        var connection = new signalR.HubConnectionBuilder()
+            .withUrl("/msRaceHub", { withCredentials: true })
+            .build();
+
+        connection.on("Receiver_CreateJockeyNguyenDnt", function () {
+            window.location.href = "@Url.Action("Index", "JockeyNguyenDnts")";
+        });
+
+        connection.on("CreateError", function (message) {
+            var text = message.startsWith(":") ? message.slice(1) : message;
+            var summary = document.querySelector(".jc-validation-summary");
+            if (summary) {
+                summary.style.display = "block";
+                summary.textContent = "⚠️ " + text;
+            }
+        });
+
+        connection.start().then(function () {
+            console.log("SignalR Connected.");
+        }).catch(function (err) {
+            return console.error(err.toString());
+        });
+
+        document.getElementById("btnHubCreate").addEventListener("click", function (event) {
+            var jockey = {
+                FullName:    document.getElementById("FullName").value,
+                PhoneNumber: document.getElementById("PhoneNumber").value,
+                Email:       document.getElementById("Email").value,
+                LicenseCode: document.getElementById("LicenseCode").value,
+                Weight:      parseFloat(document.getElementById("Weight").value) || null,
+                DateOfBirth: document.getElementById("DateOfBirth").value || null,
+                IsActive:    document.getElementById("IsActive").checked
+            };
+
+            connection.invoke("HubCreate_JockeyNguyenDnt", jockey).catch(function (err) {
+                return console.error(err.toString());
+            });
+
+            event.preventDefault();
+        });
+    </script>
 }

@@ -613,7 +613,16 @@
                                     @* [DELETE FLOW - STEP 1] Nút cũ: HTTP navigate → đã thay bằng SignalR bên dưới *@
                                     @*<a asp-action="Delete" asp-route-id="@jockey.JockeyNguyenDntid" class="btn-action btn-del" title="Xóa">🗑</a>*@
                                     @* [DELETE FLOW - STEP 1] Nút mới: invoke HubDelete_JockeyNguyenDnt qua SignalR *@
-                                    <button onclick="deleteJockey(@jockey.JockeyNguyenDntid)" class="btn-action btn-del" title="Xóa">🗑</button>
+                                    <button class="btn-action btn-del" title="Xóa"
+                                            onclick="openDeleteModal(this)"
+                                            data-id="@jockey.JockeyNguyenDntid"
+                                            data-name="@jockey.FullName"
+                                            data-phone="@jockey.PhoneNumber"
+                                            data-email="@jockey.Email"
+                                            data-license="@jockey.LicenseCode"
+                                            data-weight="@(jockey.Weight.HasValue ? jockey.Weight.Value.ToString("F1") + " kg" : "—")"
+                                            data-dob="@(jockey.DateOfBirth.HasValue ? jockey.DateOfBirth.Value.ToString("dd/MM/yyyy") : "—")"
+                                            data-status="@(jockey.IsActive ? "Hoạt động" : "Tạm dừng")">🗑</button>
                                 </div>
                             </td>
                         </tr>
@@ -621,6 +630,39 @@
                 }
             </tbody>
         </table>
+    </div>
+</div>
+
+<!-- DELETE CONFIRM MODAL -->
+<div id="deleteModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:16px; width:100%; max-width:480px; margin:1rem; box-shadow:0 20px 60px rgba(0,0,0,.3); overflow:hidden;">
+        <div style="background:linear-gradient(135deg,#7f1d1d,#dc2626); padding:1.5rem 2rem; display:flex; align-items:center; gap:12px;">
+            <span style="font-size:1.6rem;">🗑</span>
+            <div>
+                <div style="color:#fff; font-weight:700; font-size:1.1rem;">Xác nhận xóa Jockey</div>
+                <div style="color:#fca5a5; font-size:.8rem;">Hành động này không thể hoàn tác</div>
+            </div>
+        </div>
+        <div style="padding:1.5rem 2rem;">
+            <p style="font-size:.85rem; color:#6b7280; margin-bottom:1.2rem;">Bạn đang chuẩn bị xóa jockey sau khỏi hệ thống:</p>
+            <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:12px; padding:1.2rem; display:grid; grid-template-columns:1fr 1fr; gap:.7rem .5rem; font-size:.85rem;">
+                <div style="color:#6b7280;">👤 Họ và tên</div>      <div id="modal-name"    style="font-weight:600; color:#1e1b4b;"></div>
+                <div style="color:#6b7280;">📞 Điện thoại</div>     <div id="modal-phone"   style="font-weight:500; color:#374151;"></div>
+                <div style="color:#6b7280;">✉️ Email</div>           <div id="modal-email"   style="font-weight:500; color:#374151;"></div>
+                <div style="color:#6b7280;">🪪 Giấy phép</div>      <div id="modal-license" style="font-weight:500; color:#4f46e5;"></div>
+                <div style="color:#6b7280;">⚖️ Cân nặng</div>       <div id="modal-weight"  style="font-weight:500; color:#374151;"></div>
+                <div style="color:#6b7280;">🎂 Ngày sinh</div>      <div id="modal-dob"     style="font-weight:500; color:#374151;"></div>
+                <div style="color:#6b7280;">📌 Trạng thái</div>     <div id="modal-status"  style="font-weight:500; color:#374151;"></div>
+            </div>
+        </div>
+        <div style="padding:1rem 2rem 1.5rem; display:flex; justify-content:flex-end; gap:.75rem; border-top:1px solid #f1f5f9;">
+            <button onclick="closeDeleteModal()" style="padding:9px 20px; border-radius:8px; border:1.5px solid #d1d5db; background:#fff; color:#374151; font-size:.875rem; font-weight:600; cursor:pointer;">
+                ✕ Hủy
+            </button>
+            <button id="btnConfirmDelete" onclick="confirmDelete()" style="padding:9px 20px; border-radius:8px; border:none; background:linear-gradient(135deg,#dc2626,#b91c1c); color:#fff; font-size:.875rem; font-weight:600; cursor:pointer; box-shadow:0 4px 12px rgba(220,38,38,.35);">
+                🗑 Xác nhận xóa
+            </button>
+        </div>
     </div>
 </div>
 
@@ -648,13 +690,89 @@
         alert(text);
     });
 
+    // [CREATE FLOW] Lắng nghe broadcast từ server khi có jockey mới được tạo
+    //   Server gọi: Clients.All.SendAsync("Receiver_CreateJockeyNguyenDnt", jockey)
+    //   → tất cả browser đang mở trang Index đều nhận object và prepend row mới vào bảng
+    connection.on("Receiver_CreateJockeyNguyenDnt", function (item) {
+        var initials = item.fullName
+            ? item.fullName.trim().split(' ').filter(w => w).slice(-2).map(w => w[0]).join('')
+            : '?';
+        var statusBadge = item.isActive
+            ? '<span class="badge-active">● Hoạt động</span>'
+            : '<span class="badge-inactive">● Tạm dừng</span>';
+        var licenseBadge = item.licenseCode
+            ? `<span class="license-badge">${item.licenseCode}</span>`
+            : '<span style="color:#d1d5db;font-size:.8rem;">—</span>';
+        var weight = item.weight ? item.weight.toFixed(1) + ' kg' : '—';
+        var dob = item.dateOfBirth
+            ? new Date(item.dateOfBirth).toLocaleDateString('vi-VN') : '—';
+
+        var tr = `
+            <tr id="jockey-row-${item.jockeyNguyenDntid}"
+                data-name="${(item.fullName || '').toLowerCase()}"
+                data-email="${(item.email || '').toLowerCase()}"
+                data-license="${(item.licenseCode || '').toLowerCase()}"
+                data-status="${item.isActive ? 'active' : 'inactive'}">
+                <td><span class="row-num">★</span></td>
+                <td>
+                    <div class="name-cell">
+                        <div class="jockey-avatar">${initials}</div>
+                        <span class="jockey-name">${item.fullName || ''}</span>
+                    </div>
+                </td>
+                <td>
+                    <div style="font-size:.83rem;color:#374151;">${item.phoneNumber || ''}</div>
+                    <div style="font-size:.78rem;color:#9ca3af;">${item.email || ''}</div>
+                </td>
+                <td>${licenseBadge}</td>
+                <td style="font-weight:500;">${weight}</td>
+                <td>${dob}</td>
+                <td>${statusBadge}</td>
+                <td>
+                    <div class="action-group">
+                        <a href="/JockeyNguyenDnts/Edit/${item.jockeyNguyenDntid}" class="btn-action btn-edit" title="Chỉnh sửa">✏️</a>
+                        <a href="/JockeyNguyenDnts/Details/${item.jockeyNguyenDntid}" class="btn-action btn-detail" title="Chi tiết">👁</a>
+                        <button onclick="deleteJockey(${item.jockeyNguyenDntid})" class="btn-action btn-del" title="Xóa">🗑</button>
+                    </div>
+                </td>
+            </tr>`;
+
+        $('#jockeyTableBody').prepend(tr);
+    });
+
     connection.start().catch(err => console.error(err.toString()));
 
-    // [DELETE FLOW - STEP 1] Gọi Hub method khi user click nút xóa
-    function deleteJockey(jockeyId) {
-        connection.invoke("HubDelete_JockeyNguyenDnt", jockeyId)
-            .catch(err => console.error(err.toString()));
+    // [DELETE FLOW - STEP 1] Mở modal confirm với đầy đủ thông tin jockey
+    var _pendingDeleteId = null;
+
+    function openDeleteModal(btn) {
+        _pendingDeleteId = btn.dataset.id;
+        document.getElementById("modal-name").textContent    = btn.dataset.name    || "—";
+        document.getElementById("modal-phone").textContent   = btn.dataset.phone   || "—";
+        document.getElementById("modal-email").textContent   = btn.dataset.email   || "—";
+        document.getElementById("modal-license").textContent = btn.dataset.license || "—";
+        document.getElementById("modal-weight").textContent  = btn.dataset.weight  || "—";
+        document.getElementById("modal-dob").textContent     = btn.dataset.dob     || "—";
+        document.getElementById("modal-status").textContent  = btn.dataset.status  || "—";
+        document.getElementById("deleteModal").style.display = "flex";
     }
+
+    function closeDeleteModal() {
+        document.getElementById("deleteModal").style.display = "none";
+        _pendingDeleteId = null;
+    }
+
+    function confirmDelete() {
+        if (!_pendingDeleteId) return;
+        connection.invoke("HubDelete_JockeyNguyenDnt", parseInt(_pendingDeleteId))
+            .catch(err => console.error(err.toString()));
+        closeDeleteModal();
+    }
+
+    // Đóng modal khi click ra ngoài
+    document.getElementById("deleteModal").addEventListener("click", function (e) {
+        if (e.target === this) closeDeleteModal();
+    });
 </script>
 <script>
     const searchInput  = document.getElementById('searchInput');
