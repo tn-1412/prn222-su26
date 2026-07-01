@@ -7,13 +7,97 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/RaceMS.WebMVCApp.NguyenDNT.styles.css" asp-append-version="true" />
+    <style>
+        @@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+        body { font-family: 'Inter', sans-serif; }
+
+        .app-navbar {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
+            padding: .7rem 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,.15);
+        }
+
+        .app-navbar .navbar-brand {
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            font-size: 1.35rem;
+            color: #fff !important;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .app-navbar .navbar-toggler {
+            border-color: rgba(255,255,255,.3);
+        }
+
+        .app-navbar .navbar-toggler-icon {
+            filter: invert(1) grayscale(100%) brightness(200%);
+        }
+
+        .app-navbar .nav-link {
+            color: rgba(255,255,255,.75) !important;
+            font-weight: 500;
+            font-size: .9rem;
+            padding: 6px 14px !important;
+            border-radius: 8px;
+            transition: all .15s;
+        }
+
+        .app-navbar .nav-link:hover {
+            color: #fff !important;
+            background: rgba(139,92,246,.18);
+        }
+
+        .app-navbar .navbar-text-user {
+            color: rgba(255,255,255,.65);
+            font-size: .8rem;
+        }
+
+        .app-navbar .navbar-text-user strong {
+            color: #fff;
+        }
+
+        .app-navbar .role-badge {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(139,92,246,.2);
+            border: 1px solid rgba(139,92,246,.4);
+            color: #c4b5fd;
+            font-size: .68rem;
+            font-weight: 700;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            padding: 2px 9px;
+            border-radius: 20px;
+            margin-left: 6px;
+        }
+
+        .app-navbar .btn-logout {
+            border: 1.5px solid rgba(248,113,113,.5);
+            color: #fca5a5;
+            background: transparent;
+            font-size: .82rem;
+            font-weight: 600;
+            padding: 5px 14px;
+            border-radius: 8px;
+            transition: all .15s;
+        }
+
+        .app-navbar .btn-logout:hover {
+            background: #dc2626;
+            border-color: #dc2626;
+            color: #fff;
+        }
+    </style>
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm app-navbar mb-3">
             <div class="container-fluid">
                 <a class="navbar-brand" asp-area="" asp-controller="JockeyNguyenDnts" asp-action="Index">
-                    RaceMS <span class="text-danger fw-bold">PRN222</span>
+                    🏇 RaceMS
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
                         aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -22,25 +106,33 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="JockeyNguyenDnts" asp-action="Index">Jockeys</a>
+                            <a class="nav-link" asp-area="" asp-controller="JockeyNguyenDnts" asp-action="Index">Jockeys</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Chat" asp-action="Index">💬 Chat</a>
+                            <a class="nav-link" asp-area="" asp-controller="RegistrationNguyenDnts" asp-action="Index">Registrations</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="" asp-controller="Chat" asp-action="Index">💬 Chat</a>
                         </li>
                     </ul>
 
                     @if (User.Identity?.IsAuthenticated == true)
                     {
                         <ul class="navbar-nav ms-auto align-items-center">
-                            <li class="nav-item me-2">
-                                <span class="navbar-text text-muted" style="font-size:.875rem;">
-                                    Xin chào, <strong class="text-dark">@(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? User.Identity.Name)</strong>
+                            <li class="nav-item me-3">
+                                <span class="navbar-text-user">
+                                    Xin chào, <strong>@(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? User.Identity.Name)</strong>
+                                    @{ var roleName = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value; }
+                                    @if (!string.IsNullOrEmpty(roleName))
+                                    {
+                                        <span class="role-badge">@roleName</span>
+                                    }
                                 </span>
                             </li>
                             <li class="nav-item">
                                 <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
                                     @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">Đăng xuất</button>
+                                    <button type="submit" class="btn-logout">Đăng xuất</button>
                                 </form>
                             </li>
                         </ul>
@@ -56,11 +148,6 @@
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2025 - RaceMS Management System
-        </div>
-    </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

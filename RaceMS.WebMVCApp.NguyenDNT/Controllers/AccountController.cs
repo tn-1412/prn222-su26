@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using RaceMS.Entities.NguyenDNT.Models;
+using RaceMS.WebMVCApp.NguyenDNT.Models;
 using RaceMS_Services.NguyenDNT;
 using System.Security.Claims;
 
@@ -36,12 +38,19 @@ namespace RaceMS.WebMVCApp.NguyenDNT.Controllers
 
                 if (userAccount != null)
                 {
+                    // RoleId chưa map được (không nằm trong enum UserRole) → không gán role name,
+                    // tài khoản vẫn đăng nhập được nhưng không thuộc role nào → chỉ có quyền xem.
+                    var roleName = Enum.IsDefined(typeof(UserRole), userAccount.RoleId)
+                        ? ((UserRole)userAccount.RoleId).ToString()
+                        : null;
+
                     var claims = new List<Claim>
                     {
                         new Claim(ClaimTypes.Name, userAccount.UserName),
-                        new Claim(ClaimTypes.GivenName, userAccount.FullName ?? userAccount.UserName),
-                        new Claim(ClaimTypes.Role, userAccount.RoleId.ToString())
+                        new Claim(ClaimTypes.GivenName, userAccount.FullName ?? userAccount.UserName)
                     };
+                    if (roleName != null)
+                        claims.Add(new Claim(ClaimTypes.Role, roleName));
 
                     var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                     await HttpContext.SignInAsync(
@@ -60,6 +69,49 @@ namespace RaceMS.WebMVCApp.NguyenDNT.Controllers
             return View();
         }
 
+        [AllowAnonymous]
+        public IActionResult Register()
+        {
+            if (User.Identity?.IsAuthenticated == true)
+                return RedirectToAction("Index", "JockeyNguyenDnts");
+
+            return View();
+        }
+
+        [AllowAnonymous]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Register(RegisterRequest model)
+        {
+            if (model.Password != model.ConfirmPassword)
+            {
+                ModelState.AddModelError(nameof(model.ConfirmPassword), "Mật khẩu xác nhận không khớp.");
+                return View(model);
+            }
+
+            var account = new SystemUserAccount
+            {
+                UserName = model.UserName?.Trim(),
+                Password = model.Password,
+                FullName = model.FullName?.Trim(),
+                Email = model.Email?.Trim(),
+                Phone = model.Phone?.Trim(),
+                EmployeeCode = model.EmployeeCode?.Trim()
+            };
+
+            try
+            {
+                await _userAccountService.RegisterAsync(account);
+                TempData["RegisterSuccess"] = "Đăng ký thành công! Vui lòng đăng nhập.";
+                return RedirectToAction("Login");
+            }
+            catch (InvalidOperationException ex)
+            {
+                AddServiceError(ex);
+                return View(model);
+            }
+        }
+
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -75,5 +127,15 @@ namespace RaceMS.WebMVCApp.NguyenDNT.Controllers
 
         [AllowAnonymous]
         public IActionResult Forbidden() => View();
+
+        // Parse "FieldName:Thông báo" → ModelState.AddModelError(field, message)
+        private void AddServiceError(InvalidOperationException ex)
+        {
+            var parts = ex.Message.Split(':', 2);
+            if (parts.Length == 2)
+                ModelState.AddModelError(parts[0], parts[1]);
+            else
+                ModelState.AddModelError(string.Empty, ex.Message);
+        }
     }
 }

@@ -354,8 +354,6 @@
     <div class="jc-body">
 
         <form asp-action="Create" method="post">
-            @Html.AntiForgeryToken()
-
             <div asp-validation-summary="ModelOnly" class="jc-validation-summary text-danger"></div>
 
             <!-- SECTION: Thông tin cá nhân -->
@@ -417,7 +415,7 @@
                         <span class="field-icon">🪪</span>
                         <input asp-for="LicenseCode" class="field-input" placeholder="JCK-2024-XXXXX" />
                     </div>
-                    <div class="field-hint">Mã do Liên đoàn Đua ngựa Quốc gia cấp, gồm tiền tố JCK và 5 chữ số</div>
+                    <div class="field-hint">Bắt buộc — đúng định dạng JCK-YYYY-NNNNN (VD: JCK-2024-00123)</div>
                     <span asp-validation-for="LicenseCode" class="field-error"></span>
                 </div>
 

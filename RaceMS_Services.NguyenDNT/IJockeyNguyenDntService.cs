@@ -10,7 +10,8 @@ namespace RaceMS_Services.NguyenDNT
     public interface IJockeyNguyenDntService
     {
         Task<List<JockeyNguyenDnt>> GetAllAsync();
-        Task<JockeyNguyenDnt> GetByIdAsync(int id); 
+        Task<List<JockeyNguyenDnt>> SearchAsync(string? fullName, string? email, string? licenseCode);
+        Task<JockeyNguyenDnt?> GetByIdAsync(int id);
         Task<int> CreateAsync(JockeyNguyenDnt jockey);
         Task<int> UpdateAsync(JockeyNguyenDnt jockey);
         Task<bool> DeleteAsync(int id);

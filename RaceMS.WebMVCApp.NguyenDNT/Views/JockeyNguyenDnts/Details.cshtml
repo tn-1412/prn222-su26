@@ -1,60 +1,121 @@
+@using RaceMS.WebMVCApp.NguyenDNT.Models
 @model RaceMS.Entities.NguyenDNT.Models.JockeyNguyenDnt
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = "Jockey Details";
+    var weightText = Model.Weight.HasValue ? $"{Model.Weight.Value:F1} kg" : "-";
+    var dobText = Model.DateOfBirth.HasValue ? Model.DateOfBirth.Value.ToString("dd/MM/yyyy") : "-";
+    var statusText = Model.IsActive ? "Active" : "Inactive";
+    var statusClass = Model.IsActive ? "badge bg-success" : "badge bg-secondary";
+    bool canWrite = User.IsInRole(RoleNames.ChiefAccountant) || User.IsInRole(RoleNames.Accountant);
 }
 
-<h1>Details</h1>
+<h1>Jockey Details</h1>
 
-<div>
-    <h4>JockeyNguyenDnt</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.FullName)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.FullName)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.PhoneNumber)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.PhoneNumber)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Email)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Email)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.LicenseCode)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.LicenseCode)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Weight)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Weight)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.DateOfBirth)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.DateOfBirth)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.IsActive)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.IsActive)
-        </dd>
-    </dl>
+<div class="card shadow-sm">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <div>
+            <h4 class="mb-0" id="detail-fullName">@Model.FullName</h4>
+            <small class="text-muted" id="detail-license-header">@Model.LicenseCode</small>
+        </div>
+        <span id="detail-status" class="@statusClass">@statusText</span>
+    </div>
+
+    <div class="card-body">
+        <input type="hidden" id="JockeyNguyenDntid" value="@Model.JockeyNguyenDntid" />
+
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Full name</dt>
+            <dd class="col-sm-9" id="detail-fullName-value">@Model.FullName</dd>
+
+            <dt class="col-sm-3">Phone number</dt>
+            <dd class="col-sm-9" id="detail-phone">@Model.PhoneNumber</dd>
+
+            <dt class="col-sm-3">Email</dt>
+            <dd class="col-sm-9" id="detail-email">@Model.Email</dd>
+
+            <dt class="col-sm-3">License code</dt>
+            <dd class="col-sm-9" id="detail-license">@Model.LicenseCode</dd>
+
+            <dt class="col-sm-3">Weight</dt>
+            <dd class="col-sm-9" id="detail-weight">@weightText</dd>
+
+            <dt class="col-sm-3">Date of birth</dt>
+            <dd class="col-sm-9" id="detail-dob">@dobText</dd>
+
+            <dt class="col-sm-3">Status</dt>
+            <dd class="col-sm-9" id="detail-status-text">@statusText</dd>
+        </dl>
+    </div>
+
+    <div class="card-footer d-flex gap-2">
+        @if (canWrite)
+        {
+            <a asp-action="Edit" asp-route-id="@Model.JockeyNguyenDntid" class="btn btn-primary">Edit</a>
+        }
+        <a asp-action="Index" class="btn btn-outline-secondary">Back to List</a>
+    </div>
 </div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.JockeyNguyenDntid">Edit</a> |
-    <a asp-action="Index">Back to List</a>
-</div>
+
+@section Scripts {
+    <script src="~/js/signalr/dist/browser/signalr.min.js"></script>
+    <script>
+        "use strict";
+
+        var currentJockeyId = parseInt(document.getElementById("JockeyNguyenDntid").value);
+        var connection = new signalR.HubConnectionBuilder()
+            .withUrl("/msRaceHub", { withCredentials: true })
+            .build();
+
+        function sameJockey(item) {
+            return item && item.jockeyNguyenDntid === currentJockeyId;
+        }
+
+        function formatDate(value) {
+            return value ? new Date(value).toLocaleDateString("vi-VN") : "-";
+        }
+
+        function formatWeight(value) {
+            return value ? Number(value).toFixed(1) + " kg" : "-";
+        }
+
+        function setText(id, value) {
+            document.getElementById(id).textContent = value || "-";
+        }
+
+        function updateStatus(isActive) {
+            const status = document.getElementById("detail-status");
+            const text = isActive ? "Active" : "Inactive";
+
+            status.textContent = text;
+            status.className = isActive ? "badge bg-success" : "badge bg-secondary";
+            setText("detail-status-text", text);
+        }
+
+        connection.on("Receiver_EditJockeyNguyenDnt", function (item) {
+            if (!sameJockey(item)) return;
+
+            setText("detail-fullName", item.fullName);
+            setText("detail-fullName-value", item.fullName);
+            setText("detail-phone", item.phoneNumber);
+            setText("detail-email", item.email);
+            setText("detail-license", item.licenseCode);
+            setText("detail-license-header", item.licenseCode);
+            setText("detail-weight", formatWeight(item.weight));
+            setText("detail-dob", formatDate(item.dateOfBirth));
+            updateStatus(item.isActive);
+        });
+
+        connection.on("Receiver_DeleteJockeyNguyenDnt", function (jockeyId) {
+            if (parseInt(jockeyId) === currentJockeyId) {
+                window.location.href = "@Url.Action("Index", "JockeyNguyenDnts")";
+            }
+        });
+
+        connection.start().then(function () {
+            console.log("SignalR Connected.");
+        }).catch(function (err) {
+            return console.error(err.toString());
+        });
+    </script>
+}

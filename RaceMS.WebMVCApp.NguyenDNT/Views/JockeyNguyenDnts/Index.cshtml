@@ -1,9 +1,12 @@
+@using RaceMS.WebMVCApp.NguyenDNT.Models
 @model IEnumerable<RaceMS.Entities.NguyenDNT.Models.JockeyNguyenDnt>
 
 @{
     ViewData["Title"] = "Danh sách Jockey";
     int activeCount = Model.Count(j => j.IsActive);
     int totalCount  = Model.Count();
+    bool canWrite = User.IsInRole(RoleNames.ChiefAccountant) || User.IsInRole(RoleNames.Accountant);
+    bool canDelete = User.IsInRole(RoleNames.CanDelete);
 }
 
 <style>
@@ -178,6 +181,44 @@
         font-size: .9rem;
         pointer-events: none;
     }
+
+    .search-form {
+        display: flex;
+        align-items: center;
+        gap: .6rem;
+        flex: 1;
+        min-width: 280px;
+        flex-wrap: wrap;
+    }
+
+    .btn-search {
+        padding: 8px 18px;
+        border: none;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #7c3aed, #6d28d9);
+        color: #fff;
+        font-size: .875rem;
+        font-weight: 600;
+        font-family: 'Inter', sans-serif;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all .2s;
+    }
+
+    .btn-search:hover {
+        background: linear-gradient(135deg, #6d28d9, #5b21b6);
+        transform: translateY(-1px);
+    }
+
+    .btn-clear {
+        font-size: .82rem;
+        font-weight: 600;
+        color: #dc2626;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .btn-clear:hover { color: #b91c1c; text-decoration: underline; }
 
     .filter-select {
         padding: 8px 12px;
@@ -486,7 +527,10 @@
             <h1>Quản lý Jockey</h1>
             <p>Danh sách tay đua đã đăng ký trong hệ thống</p>
         </div>
-        <a asp-action="Create" class="btn-add">✚ Thêm Jockey</a>
+        @if (canWrite)
+        {
+            <a asp-action="Create" class="btn-add">✚ Thêm Jockey</a>
+        }
     </div>
 
     <!-- STATS -->
@@ -515,16 +559,40 @@
     </div>
 
     <!-- TOOLBAR -->
-    <div class="jl-toolbar">
-        <div class="search-box">
-            <span class="search-icon">🔍</span>
-            <input type="text" id="searchInput" placeholder="Tìm theo tên, email, mã giấy phép..." />
-        </div>
-        <select class="filter-select" id="statusFilter">
-            <option value="">Tất cả trạng thái</option>
-            <option value="active">Hoạt động</option>
-            <option value="inactive">Tạm dừng</option>
-        </select>
+    <div class="jl-toolbar" style="flex-direction:column; align-items:stretch;">
+        @* [SEARCH] Form GET → JockeyNguyenDnts/Index?fullName=..&email=..&licenseCode=.. (search phía server, AND giữa các ô có nhập) *@
+        <form asp-action="Index" method="get" class="search-form" style="width:100%;">
+            <div class="search-box">
+                <span class="search-icon">👤</span>
+                <input type="text" name="fullName"
+                       value="@ViewData["FullName"]"
+                       placeholder="Tìm theo họ và tên..." />
+            </div>
+            <div class="search-box">
+                <span class="search-icon">✉️</span>
+                <input type="text" name="email"
+                       value="@ViewData["Email"]"
+                       placeholder="Tìm theo email..." />
+            </div>
+            <div class="search-box">
+                <span class="search-icon">🪪</span>
+                <input type="text" name="licenseCode"
+                       value="@ViewData["LicenseCode"]"
+                       placeholder="Tìm theo mã giấy phép..." />
+            </div>
+            <button type="submit" class="btn-search">Tìm kiếm</button>
+            @if (!string.IsNullOrEmpty(ViewData["FullName"] as string) ||
+                 !string.IsNullOrEmpty(ViewData["Email"] as string) ||
+                 !string.IsNullOrEmpty(ViewData["LicenseCode"] as string))
+            {
+                <a asp-action="Index" class="btn-clear">✕ Xóa lọc</a>
+            }
+            <select class="filter-select" id="statusFilter">
+                <option value="">Tất cả trạng thái</option>
+                <option value="active">Hoạt động</option>
+                <option value="inactive">Tạm dừng</option>
+            </select>
+        </form>
     </div>
 
     <!-- TABLE -->
@@ -548,9 +616,23 @@
                     <tr>
                         <td colspan="8">
                             <div class="jl-empty">
-                                <div class="empty-icon">🏇</div>
-                                <p>Chưa có jockey nào trong hệ thống.</p>
-                                <a asp-action="Create" class="btn-add" style="margin-top:.5rem;">✚ Thêm ngay</a>
+                                @{
+                                    bool hasFilter = !string.IsNullOrEmpty(ViewData["FullName"] as string) ||
+                                                      !string.IsNullOrEmpty(ViewData["Email"] as string) ||
+                                                      !string.IsNullOrEmpty(ViewData["LicenseCode"] as string);
+                                }
+                                @if (hasFilter)
+                                {
+                                    <div class="empty-icon">🔍</div>
+                                    <p>Không tìm thấy jockey nào khớp với điều kiện tìm kiếm.</p>
+                                    <a asp-action="Index" class="btn-add" style="margin-top:.5rem;">↩ Xem tất cả</a>
+                                }
+                                else
+                                {
+                                    <div class="empty-icon">🏇</div>
+                                    <p>Chưa có jockey nào trong hệ thống.</p>
+                                    <a asp-action="Create" class="btn-add" style="margin-top:.5rem;">✚ Thêm ngay</a>
+                                }
                             </div>
                         </td>
                     </tr>
@@ -608,21 +690,25 @@
                             </td>
                             <td>
                                 <div class="action-group">
-                                    <a asp-action="Edit" asp-route-id="@jockey.JockeyNguyenDntid" class="btn-action btn-edit" title="Chỉnh sửa">✏️</a>
+                                    @if (canWrite)
+                                    {
+                                        <a asp-action="Edit" asp-route-id="@jockey.JockeyNguyenDntid" class="btn-action btn-edit" title="Chỉnh sửa">✏️</a>
+                                    }
                                     <a asp-action="Details" asp-route-id="@jockey.JockeyNguyenDntid" class="btn-action btn-detail" title="Chi tiết">👁</a>
-                                    @* [DELETE FLOW - STEP 1] Nút cũ: HTTP navigate → đã thay bằng SignalR bên dưới *@
-                                    @*<a asp-action="Delete" asp-route-id="@jockey.JockeyNguyenDntid" class="btn-action btn-del" title="Xóa">🗑</a>*@
-                                    @* [DELETE FLOW - STEP 1] Nút mới: invoke HubDelete_JockeyNguyenDnt qua SignalR *@
-                                    <button class="btn-action btn-del" title="Xóa"
-                                            onclick="openDeleteModal(this)"
-                                            data-id="@jockey.JockeyNguyenDntid"
-                                            data-name="@jockey.FullName"
-                                            data-phone="@jockey.PhoneNumber"
-                                            data-email="@jockey.Email"
-                                            data-license="@jockey.LicenseCode"
-                                            data-weight="@(jockey.Weight.HasValue ? jockey.Weight.Value.ToString("F1") + " kg" : "—")"
-                                            data-dob="@(jockey.DateOfBirth.HasValue ? jockey.DateOfBirth.Value.ToString("dd/MM/yyyy") : "—")"
-                                            data-status="@(jockey.IsActive ? "Hoạt động" : "Tạm dừng")">🗑</button>
+                                    @* [DELETE FLOW - STEP 1] invoke HubDelete_JockeyNguyenDnt qua SignalR — chỉ ChiefAccountant mới thấy nút *@
+                                    @if (canDelete)
+                                    {
+                                        <button class="btn-action btn-del" title="Xóa"
+                                                onclick="openDeleteModal(this)"
+                                                data-id="@jockey.JockeyNguyenDntid"
+                                                data-name="@jockey.FullName"
+                                                data-phone="@jockey.PhoneNumber"
+                                                data-email="@jockey.Email"
+                                                data-license="@jockey.LicenseCode"
+                                                data-weight="@(jockey.Weight.HasValue ? jockey.Weight.Value.ToString("F1") + " kg" : "—")"
+                                                data-dob="@(jockey.DateOfBirth.HasValue ? jockey.DateOfBirth.Value.ToString("dd/MM/yyyy") : "—")"
+                                                data-status="@(jockey.IsActive ? "Hoạt động" : "Tạm dừng")">🗑</button>
+                                    }
                                 </div>
                             </td>
                         </tr>
@@ -672,22 +758,98 @@
 <script>
     "use strict";
 
+    // Quyền của user hiện tại — dùng để ẩn nút Edit/Delete trên row mới do SignalR broadcast tới
+    const canWrite = @Html.Raw(canWrite.ToString().ToLowerInvariant());
+    const canDelete = @Html.Raw(canDelete.ToString().ToLowerInvariant());
+
     // [DELETE FLOW - STEP 2] Khởi tạo kết nối WebSocket tới MSRaceHub
     const connection = new signalR.HubConnectionBuilder()
         .withUrl("/msRaceHub", { withCredentials: true })
         .build();
+
+    function adjustStats(totalDelta, activeDelta) {
+        var values = document.querySelectorAll(".jl-stat-info .value");
+        if (values.length < 3) return;
+
+        var total = parseInt(values[0].textContent) || 0;
+        var active = parseInt(values[1].textContent) || 0;
+
+        total += totalDelta;
+        active += activeDelta;
+
+        values[0].textContent = total;
+        values[1].textContent = active;
+        values[2].textContent = total - active;
+    }
 
     // [DELETE FLOW - STEP 3] Lắng nghe broadcast từ server sau khi xóa thành công
     //   Server gọi: Clients.All.SendAsync("Receiver_DeleteJockeyNguyenDnt", jockeyId)
     //   → tất cả browser đang mở trang đều nhận và xóa row tương ứng
     connection.on("Receiver_DeleteJockeyNguyenDnt", function (jockeyId) {
         // [DELETE FLOW - STEP 4] Tìm <tr id="jockey-row-{id}"> trong tbody và remove khỏi DOM
-        $('#jockeyTableBody').find(`tr[id='jockey-row-${jockeyId}']`).remove();
+        var row = document.getElementById(`jockey-row-${jockeyId}`);
+        if (!row) return;
+
+        adjustStats(-1, row.dataset.status === "active" ? -1 : 0);
+        row.remove();
     });
 
     connection.on("DeleteError", function (message) {
         const text = message.startsWith(":") ? message.slice(1) : message;
         alert(text);
+    });
+
+    connection.on("Receiver_EditJockeyNguyenDnt", function (item) {
+        var row = document.getElementById(`jockey-row-${item.jockeyNguyenDntid}`);
+        if (!row) return;
+
+        var oldStatus = row.dataset.status;
+        var initials = item.fullName
+            ? item.fullName.trim().split(' ').filter(w => w).slice(-2).map(w => w[0]).join('')
+            : '?';
+        var statusText = item.isActive ? 'Hoạt động' : 'Tạm dừng';
+        var statusBadge = item.isActive
+            ? '<span class="badge-active">● Hoạt động</span>'
+            : '<span class="badge-inactive">● Tạm dừng</span>';
+        var licenseBadge = item.licenseCode
+            ? `<span class="license-badge">${item.licenseCode}</span>`
+            : '<span style="color:#d1d5db;font-size:.8rem;">—</span>';
+        var weight = item.weight ? Number(item.weight).toFixed(1) + ' kg' : '—';
+        var dob = item.dateOfBirth
+            ? new Date(item.dateOfBirth).toLocaleDateString('vi-VN') : '—';
+
+        row.dataset.name = (item.fullName || '').toLowerCase();
+        row.dataset.email = (item.email || '').toLowerCase();
+        row.dataset.license = (item.licenseCode || '').toLowerCase();
+        row.dataset.status = item.isActive ? 'active' : 'inactive';
+        if (oldStatus !== row.dataset.status) {
+            adjustStats(0, row.dataset.status === "active" ? 1 : -1);
+        }
+
+        row.cells[1].innerHTML = `
+            <div class="name-cell">
+                <div class="jockey-avatar">${initials}</div>
+                <span class="jockey-name">${item.fullName || ''}</span>
+            </div>`;
+        row.cells[2].innerHTML = `
+            <div style="font-size:.83rem;color:#374151;">${item.phoneNumber || ''}</div>
+            <div style="font-size:.78rem;color:#9ca3af;">${item.email || ''}</div>`;
+        row.cells[3].innerHTML = licenseBadge;
+        row.cells[4].textContent = weight;
+        row.cells[4].style.fontWeight = "500";
+        row.cells[5].textContent = dob;
+        row.cells[6].innerHTML = statusBadge;
+
+        var deleteButton = row.querySelector(".btn-del");
+        if (deleteButton) {
+            deleteButton.dataset.name = item.fullName || '';
+            deleteButton.dataset.phone = item.phoneNumber || '';
+            deleteButton.dataset.email = item.email || '';
+            deleteButton.dataset.license = item.licenseCode || '';
+            deleteButton.dataset.weight = weight;
+            deleteButton.dataset.dob = dob;
+            deleteButton.dataset.status = statusText;
+        }
     });
 
     // [CREATE FLOW] Lắng nghe broadcast từ server khi có jockey mới được tạo
@@ -730,14 +892,23 @@
                 <td>${statusBadge}</td>
                 <td>
                     <div class="action-group">
-                        <a href="/JockeyNguyenDnts/Edit/${item.jockeyNguyenDntid}" class="btn-action btn-edit" title="Chỉnh sửa">✏️</a>
+                        ${canWrite ? `<a href="/JockeyNguyenDnts/Edit/${item.jockeyNguyenDntid}" class="btn-action btn-edit" title="Chỉnh sửa">✏️</a>` : ''}
                         <a href="/JockeyNguyenDnts/Details/${item.jockeyNguyenDntid}" class="btn-action btn-detail" title="Chi tiết">👁</a>
-                        <button onclick="deleteJockey(${item.jockeyNguyenDntid})" class="btn-action btn-del" title="Xóa">🗑</button>
+                        ${canDelete ? `<button onclick="openDeleteModal(this)" class="btn-action btn-del" title="Xóa"
+                                data-id="${item.jockeyNguyenDntid}"
+                                data-name="${item.fullName || ''}"
+                                data-phone="${item.phoneNumber || ''}"
+                                data-email="${item.email || ''}"
+                                data-license="${item.licenseCode || ''}"
+                                data-weight="${weight}"
+                                data-dob="${dob}"
+                                data-status="${item.isActive ? 'Hoạt động' : 'Tạm dừng'}">🗑</button>` : ''}
                     </div>
                 </td>
             </tr>`;
 
         $('#jockeyTableBody').prepend(tr);
+        adjustStats(1, item.isActive ? 1 : 0);
     });
 
     connection.start().catch(err => console.error(err.toString()));
@@ -775,7 +946,8 @@
     });
 </script>
 <script>
-    const searchInput  = document.getElementById('searchInput');
+    // Tìm theo tên/email/mã giấy phép giờ là search phía server (3 ô, submit GET).
+    // JS chỉ còn lo phân trang + filter nhanh theo trạng thái trên kết quả đã trả về.
     const statusFilter = document.getElementById('statusFilter');
     const rows         = document.querySelectorAll('#jockeyTable tbody tr[data-name]');
 
@@ -791,25 +963,19 @@
         $('#jockeyTable').createTablePagination(paginationOpts);
     }
 
-    function filterTable() {
-        const q      = searchInput.value.toLowerCase().trim();
+    function filterByStatus() {
         const status = statusFilter.value;
 
-        if (q || status) {
+        if (status) {
             // Bypass pagination: show all rows then apply filter
             $('#jockeyTable tbody tr').show();
             $('.page-list-table-jockeyTable').hide();
 
             rows.forEach(row => {
-                const matchSearch = !q ||
-                    (row.dataset.name    && row.dataset.name.includes(q))    ||
-                    (row.dataset.email   && row.dataset.email.includes(q))   ||
-                    (row.dataset.license && row.dataset.license.includes(q));
-                const matchStatus = !status || row.dataset.status === status;
-                row.style.display = (matchSearch && matchStatus) ? '' : 'none';
+                row.style.display = (row.dataset.status === status) ? '' : 'none';
             });
         } else {
-            // No filter — restore pagination from scratch
+            // Không filter — khôi phục phân trang từ đầu
             initPagination();
         }
     }
@@ -818,7 +984,6 @@
         initPagination();
     });
 
-    searchInput.addEventListener('input', filterTable);
-    statusFilter.addEventListener('change', filterTable);
+    statusFilter.addEventListener('change', filterByStatus);
 </script>
 }

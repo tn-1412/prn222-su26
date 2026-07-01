@@ -17,13 +17,27 @@ namespace RaceMS_Repositories.NguyenDNT
         {
             return await _context.RegistrationNguyenDnts.Where(c => c.JockeyNguyenDntid == id).ToListAsync();
         }
-        public async Task<List<RaceMS.Entities.NguyenDNT.Models.RegistrationNguyenDnt>> GetByIdAsync(int id)
+        public new async Task<List<RaceMS.Entities.NguyenDNT.Models.RegistrationNguyenDnt>> GetByIdAsync(int id)
         {
             return await _context.RegistrationNguyenDnts.Where(c => c.RegistrationNguyenDntid == id).ToListAsync();
         }
-        public async Task<List<RaceMS.Entities.NguyenDNT.Models.RegistrationNguyenDnt>> SearchAsync(int code, decimal amount, string name)
+        // Tìm theo 3 trường độc lập: RegistrationNguyenDntid (mã) / PrizeMoney (tiền thưởng) / HorseName (tên ngựa), AND giữa các ô có nhập
+        public async Task<List<RaceMS.Entities.NguyenDNT.Models.RegistrationNguyenDnt>> SearchAsync(int? code, decimal? amount, string? name)
         {
-            return await _context.RegistrationNguyenDnts.Where(c => c.RegistrationNguyenDntid == code || c.PrizeMoney == amount || c.HorseName.Contains(name)).ToListAsync();
+            var query = _context.RegistrationNguyenDnts.AsQueryable();
+
+            if (code.HasValue)
+                query = query.Where(c => c.RegistrationNguyenDntid == code.Value);
+
+            if (amount.HasValue)
+                query = query.Where(c => c.PrizeMoney == amount.Value);
+
+            if (!string.IsNullOrWhiteSpace(name))
+                query = query.Where(c => c.HorseName != null && c.HorseName.Contains(name));
+
+            return await query
+                .OrderByDescending(c => c.RegistrationNguyenDntid)
+                .ToListAsync();
         }
         //public async Task<int> CreateAsync(RaceMS.Entities.NguyenDNT.Models.RegistrationNguyenDnt registration)
         //{
@@ -41,6 +55,11 @@ namespace RaceMS_Repositories.NguyenDNT
             if (registration == null) return false;
             _context.RegistrationNguyenDnts.Remove(registration);
             return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> JockeyExistsAsync(int jockeyId)
+        {
+            return await _context.JockeyNguyenDnts.AnyAsync(j => j.JockeyNguyenDntid == jockeyId);
         }
     }
 }

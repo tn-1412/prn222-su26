@@ -15,6 +15,7 @@ builder.Services.AddDbContext<RaceManagementDBContext>(options =>
 
 builder.Services.AddScoped<JockeyNguyenDntRepository>();
 builder.Services.AddScoped<IJockeyNguyenDntService, JockeyNguyenDntService>();
+
 builder.Services.AddScoped<IRegistrationNguyenDntService, RegistrationNguyenDntService>();
 
 builder.Services.AddScoped<SystemUserAccountRepository>();

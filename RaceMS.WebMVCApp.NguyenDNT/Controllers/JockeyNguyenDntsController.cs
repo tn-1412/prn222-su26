@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RaceMS.Entities.NguyenDNT.Models;
+using RaceMS.WebMVCApp.NguyenDNT.Models;
 using RaceMS_Services.NguyenDNT;
 
 namespace RaceMS.WebMVCApp.NguyenDNT.Controllers
@@ -15,10 +16,13 @@ namespace RaceMS.WebMVCApp.NguyenDNT.Controllers
             _jockeyService = jockeyService;
         }
 
-        // GET: JockeyNguyenDnts
-        public async Task<IActionResult> Index()
+        // GET: JockeyNguyenDnts?fullName=..&email=..&licenseCode=..
+        public async Task<IActionResult> Index(string? fullName, string? email, string? licenseCode)
         {
-            var jockeys = await _jockeyService.GetAllAsync();
+            ViewData["FullName"] = fullName;
+            ViewData["Email"] = email;
+            ViewData["LicenseCode"] = licenseCode;
+            var jockeys = await _jockeyService.SearchAsync(fullName, email, licenseCode);
             return View(jockeys);
         }
 
@@ -31,6 +35,7 @@ namespace RaceMS.WebMVCApp.NguyenDNT.Controllers
         }
 
         // GET: JockeyNguyenDnts/Create
+        [Authorize(Roles = RoleNames.CanWrite)]
         public IActionResult Create()
         {
             return View();
@@ -38,6 +43,7 @@ namespace RaceMS.WebMVCApp.NguyenDNT.Controllers
 
         // POST: JockeyNguyenDnts/Create
         [HttpPost]
+        [Authorize(Roles = RoleNames.CanWrite)]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
             [Bind("FullName,PhoneNumber,Email,LicenseCode,Weight,DateOfBirth,IsActive")]
@@ -58,6 +64,7 @@ namespace RaceMS.WebMVCApp.NguyenDNT.Controllers
         }
 
         // GET: JockeyNguyenDnts/Edit/5
+        [Authorize(Roles = RoleNames.CanWrite)]
         public async Task<IActionResult> Edit(int id)
         {
             var jockey = await _jockeyService.GetByIdAsync(id);
@@ -67,6 +74,7 @@ namespace RaceMS.WebMVCApp.NguyenDNT.Controllers
 
         // POST: JockeyNguyenDnts/Edit/5
         [HttpPost]
+        [Authorize(Roles = RoleNames.CanWrite)]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id,
             [Bind("JockeyNguyenDntid,FullName,PhoneNumber,Email,LicenseCode,Weight,DateOfBirth,IsActive")]
@@ -88,6 +96,7 @@ namespace RaceMS.WebMVCApp.NguyenDNT.Controllers
         }
 
         // GET: JockeyNguyenDnts/Delete/5
+        [Authorize(Roles = RoleNames.CanDelete)]
         public async Task<IActionResult> Delete(int id)
         {
             var jockey = await _jockeyService.GetByIdAsync(id);
@@ -97,6 +106,7 @@ namespace RaceMS.WebMVCApp.NguyenDNT.Controllers
 
         // POST: JockeyNguyenDnts/Delete/5
         [HttpPost, ActionName("Delete")]
+        [Authorize(Roles = RoleNames.CanDelete)]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {

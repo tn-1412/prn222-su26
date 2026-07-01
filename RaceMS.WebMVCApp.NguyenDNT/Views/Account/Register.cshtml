@@ -1,4 +1,4 @@
-@model RaceMS.WebMVCApp.NguyenDNT.Models.LoginRequest
+@model RaceMS.WebMVCApp.NguyenDNT.Models.RegisterRequest
 
 @{
     Layout = null;
@@ -9,7 +9,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Đăng nhập - RaceMS</title>
+    <title>Đăng ký - RaceMS</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <style>
@@ -34,9 +34,9 @@
 
         .login-shell {
             width: 100%;
-            max-width: 900px;
+            max-width: 980px;
             display: grid;
-            grid-template-columns: 1.05fr 1fr;
+            grid-template-columns: .85fr 1.15fr;
             background: rgba(255,255,255,.03);
             border: 1px solid rgba(255,255,255,.08);
             border-radius: 22px;
@@ -48,7 +48,7 @@
         /* ── LEFT: BRAND PANEL ── */
         .login-brand {
             position: relative;
-            padding: 3rem 2.6rem;
+            padding: 3rem 2.4rem;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -101,7 +101,7 @@
         .brand-title h1 {
             font-family: 'Playfair Display', serif;
             color: #fff;
-            font-size: 2.4rem;
+            font-size: 2.2rem;
             font-weight: 700;
             line-height: 1.15;
             margin: 0 0 .8rem;
@@ -109,16 +109,16 @@
 
         .brand-title p {
             color: #a5b4d4;
-            font-size: .92rem;
+            font-size: .9rem;
             line-height: 1.6;
             margin: 0;
-            max-width: 320px;
+            max-width: 300px;
         }
 
         /* ── RIGHT: FORM PANEL ── */
         .login-form-panel {
             background: #ffffff;
-            padding: 3rem 2.6rem;
+            padding: 2.6rem 2.6rem;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -134,7 +134,7 @@
         .login-form-panel .subtitle {
             color: #6b7280;
             font-size: .85rem;
-            margin: 0 0 1.8rem;
+            margin: 0 0 1.5rem;
         }
 
         .login-error-box {
@@ -153,13 +153,21 @@
         }
 
         .login-error-box::before {
-            content: '⚠️ Đăng nhập thất bại';
+            content: '⚠️ Đăng ký thất bại';
             display: block;
             font-weight: 600;
             margin-bottom: 4px;
         }
 
-        .login-field { margin-bottom: 1.2rem; }
+        .register-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0 1rem;
+        }
+
+        .register-grid .full-width { grid-column: 1 / -1; }
+
+        .login-field { margin-bottom: 1rem; }
 
         .login-label {
             display: block;
@@ -183,10 +191,10 @@
 
         .login-input {
             width: 100%;
-            padding: 11px 14px 11px 42px;
+            padding: 10px 14px 10px 42px;
             border: 1.5px solid #d1d5db;
             border-radius: 10px;
-            font-size: .9rem;
+            font-size: .88rem;
             font-family: 'Inter', sans-serif;
             color: #111827;
             background: #fafafa;
@@ -202,7 +210,7 @@
         }
 
         .login-field-error {
-            font-size: .75rem;
+            font-size: .73rem;
             color: #ef4444;
             margin-top: 4px;
             display: block;
@@ -232,16 +240,6 @@
 
         .btn-login:active { transform: translateY(0); }
 
-        .login-success-box {
-            background: #f0fdf4;
-            border: 1px solid #bbf7d0;
-            border-radius: 10px;
-            padding: 10px 14px;
-            margin-bottom: 1.3rem;
-            color: #15803d;
-            font-size: .82rem;
-        }
-
         .switch-link {
             text-align: center;
             font-size: .82rem;
@@ -260,6 +258,7 @@
         @@media (max-width: 760px) {
             .login-shell { grid-template-columns: 1fr; }
             .login-brand { display: none; }
+            .register-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -271,46 +270,88 @@
         <div class="login-brand">
             <div class="brand-badge">🏇 Race Management System</div>
             <div class="brand-title">
-                <h1>RaceMS</h1>
-                <p>Quản lý jockey, đăng ký đua và cập nhật kết quả theo thời gian thực — tất cả trong một nền tảng duy nhất.</p>
+                <h1>Tạo tài khoản</h1>
+                <p>Đăng ký để truy cập hệ thống quản lý jockey và đăng ký đua. Tài khoản mới mặc định ở quyền thấp nhất (chỉ xem) — liên hệ quản trị viên nếu cần nâng quyền.</p>
             </div>
         </div>
 
         <!-- RIGHT: FORM -->
         <div class="login-form-panel">
-            <h2>Đăng nhập</h2>
-            <p class="subtitle">Nhập thông tin tài khoản để truy cập hệ thống</p>
-
-            @if (TempData["RegisterSuccess"] != null)
-            {
-                <div class="login-success-box">✅ @TempData["RegisterSuccess"]</div>
-            }
+            <h2>Đăng ký tài khoản</h2>
+            <p class="subtitle">Điền đầy đủ thông tin bên dưới</p>
 
             <div asp-validation-summary="ModelOnly" class="login-error-box text-danger" style="@(ViewData.ModelState.IsValid ? "display:none;" : "")"></div>
 
-            <form asp-action="Login" method="post" novalidate>
-                <div class="login-field">
-                    <label class="login-label" asp-for="UserName">Tên đăng nhập</label>
-                    <div class="login-field-wrapper">
-                        <span class="login-field-icon">👤</span>
-                        <input asp-for="UserName" class="login-input" placeholder="Tên đăng nhập hoặc email" autocomplete="username" autofocus />
+            <form asp-action="Register" method="post" novalidate>
+                <div class="register-grid">
+                    <div class="login-field full-width">
+                        <label class="login-label" asp-for="FullName">Họ và tên</label>
+                        <div class="login-field-wrapper">
+                            <span class="login-field-icon">👤</span>
+                            <input asp-for="FullName" class="login-input" placeholder="Nguyễn Văn A" autofocus />
+                        </div>
+                        <span asp-validation-for="FullName" class="login-field-error"></span>
                     </div>
-                    <span asp-validation-for="UserName" class="login-field-error"></span>
+
+                    <div class="login-field">
+                        <label class="login-label" asp-for="Email">Email</label>
+                        <div class="login-field-wrapper">
+                            <span class="login-field-icon">✉️</span>
+                            <input asp-for="Email" type="email" class="login-input" placeholder="ban@racems.vn" />
+                        </div>
+                        <span asp-validation-for="Email" class="login-field-error"></span>
+                    </div>
+
+                    <div class="login-field">
+                        <label class="login-label" asp-for="Phone">Số điện thoại</label>
+                        <div class="login-field-wrapper">
+                            <span class="login-field-icon">📞</span>
+                            <input asp-for="Phone" class="login-input" placeholder="0912 345 678" />
+                        </div>
+                        <span asp-validation-for="Phone" class="login-field-error"></span>
+                    </div>
+
+                    <div class="login-field">
+                        <label class="login-label" asp-for="UserName">Tên đăng nhập</label>
+                        <div class="login-field-wrapper">
+                            <span class="login-field-icon">🆔</span>
+                            <input asp-for="UserName" class="login-input" placeholder="Tên đăng nhập" autocomplete="username" />
+                        </div>
+                        <span asp-validation-for="UserName" class="login-field-error"></span>
+                    </div>
+
+                    <div class="login-field">
+                        <label class="login-label" asp-for="EmployeeCode">Mã nhân viên</label>
+                        <div class="login-field-wrapper">
+                            <span class="login-field-icon">🏷️</span>
+                            <input asp-for="EmployeeCode" class="login-input" placeholder="NV-0001" />
+                        </div>
+                        <span asp-validation-for="EmployeeCode" class="login-field-error"></span>
+                    </div>
+
+                    <div class="login-field">
+                        <label class="login-label" asp-for="Password">Mật khẩu</label>
+                        <div class="login-field-wrapper">
+                            <span class="login-field-icon">🔒</span>
+                            <input type="password" asp-for="Password" class="login-input" placeholder="Tối thiểu 6 ký tự" autocomplete="new-password" />
+                        </div>
+                        <span asp-validation-for="Password" class="login-field-error"></span>
+                    </div>
+
+                    <div class="login-field">
+                        <label class="login-label" asp-for="ConfirmPassword">Xác nhận mật khẩu</label>
+                        <div class="login-field-wrapper">
+                            <span class="login-field-icon">🔒</span>
+                            <input type="password" asp-for="ConfirmPassword" class="login-input" placeholder="Nhập lại mật khẩu" autocomplete="new-password" />
+                        </div>
+                        <span asp-validation-for="ConfirmPassword" class="login-field-error"></span>
+                    </div>
                 </div>
 
-                <div class="login-field">
-                    <label class="login-label" asp-for="Password">Mật khẩu</label>
-                    <div class="login-field-wrapper">
-                        <span class="login-field-icon">🔒</span>
-                        <input type="password" asp-for="Password" class="login-input" placeholder="••••••••" autocomplete="current-password" />
-                    </div>
-                    <span asp-validation-for="Password" class="login-field-error"></span>
-                </div>
-
-                <button type="submit" class="btn-login">Đăng nhập →</button>
+                <button type="submit" class="btn-login">Đăng ký →</button>
 
                 <div class="switch-link">
-                    Chưa có tài khoản? <a asp-action="Register">Đăng ký ngay</a>
+                    Đã có tài khoản? <a asp-action="Login">Đăng nhập ngay</a>
                 </div>
             </form>
         </div>

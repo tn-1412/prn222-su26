@@ -1,0 +1,228 @@
+@model RaceMS.Entities.NguyenDNT.Models.RegistrationNguyenDnt
+
+@{
+    ViewData["Title"] = "Chỉnh sửa đăng ký";
+}
+
+<style>
+    .rc-wrapper { max-width: 860px; margin: 2rem auto; font-family: 'Inter', sans-serif; }
+
+    .rc-header {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
+        border-radius: 16px 16px 0 0;
+        padding: 2.5rem 2.5rem 2rem;
+    }
+
+    .rc-header h1 { color: #fff; font-size: 1.8rem; font-weight: 700; margin: 0 0 .4rem; }
+    .rc-header p { color: #94a3b8; font-size: .9rem; margin: 0; }
+
+    .rc-body {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-top: none;
+        border-radius: 0 0 16px 16px;
+        padding: 2rem 2.5rem 2.5rem;
+        box-shadow: 0 10px 40px rgba(0,0,0,.08);
+    }
+
+    .rc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+    .rc-grid .full-width { grid-column: 1 / -1; }
+
+    .rc-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 1.2rem; }
+    .rc-label { font-size: .8rem; font-weight: 600; color: #374151; }
+    .rc-label .required { color: #ef4444; margin-left: 2px; }
+
+    .rc-input {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1.5px solid #d1d5db;
+        border-radius: 10px;
+        font-size: .9rem;
+        background: #fafafa;
+        box-sizing: border-box;
+    }
+
+    .rc-input:focus {
+        outline: none;
+        border-color: #8b5cf6;
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(139,92,246,.12);
+    }
+
+    .rc-checkbox-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        background: #f8f7ff;
+        border: 1.5px solid #e9d5ff;
+        border-radius: 10px;
+    }
+
+    .rc-error { font-size: .75rem; color: #ef4444; margin-top: 2px; }
+
+    .rc-validation-summary {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 10px;
+        padding: 12px 16px;
+        margin-bottom: 1.5rem;
+        font-size: .85rem;
+        color: #b91c1c;
+    }
+
+    .rc-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 1rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .btn-back {
+        display: inline-flex; align-items: center; gap: 6px; color: #6b7280;
+        font-size: .875rem; font-weight: 500; text-decoration: none;
+        padding: 8px 16px; border-radius: 8px; border: 1.5px solid #e5e7eb;
+    }
+    .btn-back:hover { color: #374151; border-color: #9ca3af; background: #f9fafb; text-decoration: none; }
+
+    .btn-create {
+        display: inline-flex; align-items: center; gap: 8px;
+        background: linear-gradient(135deg, #7c3aed, #6d28d9);
+        color: #fff; font-size: .9rem; font-weight: 600; padding: 11px 28px;
+        border-radius: 10px; border: none; cursor: pointer;
+    }
+    .btn-create:hover { background: linear-gradient(135deg, #6d28d9, #5b21b6); transform: translateY(-1px); }
+</style>
+
+<div class="rc-wrapper">
+    <div class="rc-header">
+        <h1>✏️ Chỉnh sửa đăng ký đua</h1>
+        <p>Cập nhật thông tin đăng ký #@Model.RegistrationNguyenDntid</p>
+    </div>
+
+    <div class="rc-body">
+        <form asp-action="Edit" method="post">
+            <input type="hidden" asp-for="RegistrationNguyenDntid" />
+            <div asp-validation-summary="ModelOnly" class="rc-validation-summary text-danger"></div>
+
+            <div class="rc-grid">
+                <div class="rc-field full-width">
+                    <label class="rc-label" asp-for="RaceName">Tên giải đua <span class="required">*</span></label>
+                    <input asp-for="RaceName" class="rc-input" />
+                    <span asp-validation-for="RaceName" class="rc-error"></span>
+                </div>
+
+                <div class="rc-field">
+                    <label class="rc-label" asp-for="HorseName">Tên ngựa <span class="required">*</span></label>
+                    <input asp-for="HorseName" class="rc-input" />
+                    <span asp-validation-for="HorseName" class="rc-error"></span>
+                </div>
+
+                <div class="rc-field">
+                    <label class="rc-label" asp-for="JockeyNguyenDntid">Jockey</label>
+                    <select asp-for="JockeyNguyenDntid" asp-items="ViewBag.Jockeys" class="rc-input">
+                        <option value="">-- Chọn jockey --</option>
+                    </select>
+                    <span asp-validation-for="JockeyNguyenDntid" class="rc-error"></span>
+                </div>
+
+                <div class="rc-field">
+                    <label class="rc-label" asp-for="RegisteredDate">Ngày đăng ký</label>
+                    <input asp-for="RegisteredDate" class="rc-input" type="date" />
+                    <span asp-validation-for="RegisteredDate" class="rc-error"></span>
+                </div>
+
+                <div class="rc-field">
+                    <label class="rc-label" asp-for="ResponseDate">Ngày phản hồi</label>
+                    <input asp-for="ResponseDate" class="rc-input" type="date" />
+                    <span asp-validation-for="ResponseDate" class="rc-error"></span>
+                </div>
+
+                <div class="rc-field">
+                    <label class="rc-label" asp-for="PrizeMoney">Tiền thưởng</label>
+                    <input asp-for="PrizeMoney" class="rc-input" type="number" step="0.01" min="0" />
+                    <span asp-validation-for="PrizeMoney" class="rc-error"></span>
+                </div>
+
+                <div class="rc-field" style="justify-content: flex-end;">
+                    <label class="rc-label">Trạng thái xác nhận</label>
+                    <div class="rc-checkbox-row">
+                        <input type="hidden" name="IsConfirmed" value="false" />
+                        <input type="checkbox" name="IsConfirmed" id="IsConfirmed" value="true"
+                               checked="@(Model?.IsConfirmed == true ? "checked" : null)" />
+                        <label for="IsConfirmed">Đã xác nhận tham gia</label>
+                    </div>
+                </div>
+
+                <div class="rc-field full-width">
+                    <label class="rc-label" asp-for="Note">Ghi chú</label>
+                    <input asp-for="Note" class="rc-input" />
+                    <span asp-validation-for="Note" class="rc-error"></span>
+                </div>
+            </div>
+
+            <div class="rc-actions">
+                <a asp-action="Index" class="btn-back">← Quay lại danh sách</a>
+                <div style="display:flex; gap:10px;">
+                    <button type="submit" class="btn-create" style="background:linear-gradient(135deg,#0369a1,#0284c7);">
+                        💾 Lưu thay đổi
+                    </button>
+                    <button type="button" id="btnHubUpdate" class="btn-create">
+                        ⚡ Sửa via SignalR
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+    <script src="~/js/signalr/dist/browser/signalr.min.js"></script>
+    <script>
+        "use strict";
+
+        var connection = new signalR.HubConnectionBuilder()
+            .withUrl("/msRaceHub", { withCredentials: true })
+            .build();
+
+        connection.on("Receiver_EditRegistrationNguyenDnt", function () {
+            window.location.href = "@Url.Action("Index", "RegistrationNguyenDnts")";
+        });
+
+        connection.on("EditError", function (message) {
+            var text = message && message.startsWith(":") ? message.slice(1) : message;
+            var summary = document.querySelector(".rc-validation-summary");
+            if (summary) {
+                summary.style.display = "block";
+                summary.textContent = "⚠️ " + (text || "Cập nhật thất bại.");
+            } else {
+                alert(text || "Cập nhật thất bại.");
+            }
+        });
+
+        connection.start().catch(function (err) { console.error(err.toString()); });
+
+        document.getElementById("btnHubUpdate").addEventListener("click", function (event) {
+            var registration = {
+                RegistrationNguyenDntid: parseInt(document.getElementById("RegistrationNguyenDntid").value),
+                RaceName: document.getElementById("RaceName").value,
+                HorseName: document.getElementById("HorseName").value,
+                JockeyNguyenDntid: parseInt(document.getElementById("JockeyNguyenDntid").value) || null,
+                RegisteredDate: document.getElementById("RegisteredDate").value || null,
+                ResponseDate: document.getElementById("ResponseDate").value || null,
+                PrizeMoney: parseFloat(document.getElementById("PrizeMoney").value) || null,
+                IsConfirmed: document.getElementById("IsConfirmed").checked,
+                Note: document.getElementById("Note").value
+            };
+
+            connection.invoke("HubEdit_RegistrationNguyenDnt", registration).catch(function (err) {
+                console.error(err.toString());
+            });
+
+            event.preventDefault();
+        });
+    </script>
+}

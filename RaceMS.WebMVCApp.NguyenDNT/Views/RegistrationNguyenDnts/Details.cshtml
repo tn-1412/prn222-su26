@@ -1,0 +1,99 @@
+@using RaceMS.WebMVCApp.NguyenDNT.Models
+@model RaceMS.Entities.NguyenDNT.Models.RegistrationNguyenDnt
+
+@{
+    ViewData["Title"] = "Chi tiết đăng ký";
+    var statusText = Model.IsConfirmed == true ? "Đã xác nhận" : "Chờ xác nhận";
+    var statusClass = Model.IsConfirmed == true ? "badge bg-success" : "badge bg-secondary";
+    bool canWrite = User.IsInRole(RoleNames.ChiefAccountant) || User.IsInRole(RoleNames.Accountant);
+}
+
+<h1>Chi tiết đăng ký đua</h1>
+
+<div class="card shadow-sm">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <div>
+            <h4 class="mb-0" id="detail-raceName">@Model.RaceName</h4>
+            <small class="text-muted" id="detail-horseName">🐎 @Model.HorseName</small>
+        </div>
+        <span id="detail-status" class="@statusClass">@statusText</span>
+    </div>
+
+    <div class="card-body">
+        <input type="hidden" id="RegistrationNguyenDntid" value="@Model.RegistrationNguyenDntid" />
+
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Mã đăng ký</dt>
+            <dd class="col-sm-9">@Model.RegistrationNguyenDntid</dd>
+
+            <dt class="col-sm-3">Giải đua</dt>
+            <dd class="col-sm-9" id="detail-raceName-value">@Model.RaceName</dd>
+
+            <dt class="col-sm-3">Tên ngựa</dt>
+            <dd class="col-sm-9" id="detail-horseName-value">@Model.HorseName</dd>
+
+            <dt class="col-sm-3">Ngày đăng ký</dt>
+            <dd class="col-sm-9" id="detail-registeredDate">@(Model.RegisteredDate?.ToString("dd/MM/yyyy") ?? "—")</dd>
+
+            <dt class="col-sm-3">Ngày phản hồi</dt>
+            <dd class="col-sm-9" id="detail-responseDate">@(Model.ResponseDate?.ToString("dd/MM/yyyy") ?? "—")</dd>
+
+            <dt class="col-sm-3">Tiền thưởng</dt>
+            <dd class="col-sm-9" id="detail-prizeMoney">@(Model.PrizeMoney?.ToString("N0") ?? "—")</dd>
+
+            <dt class="col-sm-3">Jockey ID</dt>
+            <dd class="col-sm-9" id="detail-jockeyId">@(Model.JockeyNguyenDntid?.ToString() ?? "—")</dd>
+
+            <dt class="col-sm-3">Ghi chú</dt>
+            <dd class="col-sm-9" id="detail-note">@Model.Note</dd>
+        </dl>
+    </div>
+
+    <div class="card-footer d-flex gap-2">
+        @if (canWrite)
+        {
+            <a asp-action="Edit" asp-route-id="@Model.RegistrationNguyenDntid" class="btn btn-primary">Chỉnh sửa</a>
+        }
+        <a asp-action="Index" class="btn btn-outline-secondary">Quay lại danh sách</a>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/signalr/dist/browser/signalr.min.js"></script>
+    <script>
+        "use strict";
+
+        var currentId = parseInt(document.getElementById("RegistrationNguyenDntid").value);
+        var connection = new signalR.HubConnectionBuilder()
+            .withUrl("/msRaceHub", { withCredentials: true })
+            .build();
+
+        function sameRegistration(item) {
+            return item && item.registrationNguyenDntid === currentId;
+        }
+
+        connection.on("Receiver_EditRegistrationNguyenDnt", function (item) {
+            if (!sameRegistration(item)) return;
+
+            document.getElementById("detail-raceName").textContent = item.raceName || "";
+            document.getElementById("detail-raceName-value").textContent = item.raceName || "";
+            document.getElementById("detail-horseName").textContent = "🐎 " + (item.horseName || "");
+            document.getElementById("detail-horseName-value").textContent = item.horseName || "";
+            document.getElementById("detail-prizeMoney").textContent = item.prizeMoney ?? "—";
+            document.getElementById("detail-note").textContent = item.note || "";
+
+            var status = document.getElementById("detail-status");
+            var confirmed = item.isConfirmed === true;
+            status.textContent = confirmed ? "Đã xác nhận" : "Chờ xác nhận";
+            status.className = confirmed ? "badge bg-success" : "badge bg-secondary";
+        });
+
+        connection.on("Receiver_DeleteRegistrationNguyenDnt", function (id) {
+            if (parseInt(id) === currentId) {
+                window.location.href = "@Url.Action("Index", "RegistrationNguyenDnts")";
+            }
+        });
+
+        connection.start().catch(err => console.error(err.toString()));
+    </script>
+}

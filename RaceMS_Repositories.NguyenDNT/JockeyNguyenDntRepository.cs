@@ -16,12 +16,31 @@ namespace RaceMS_Repositories.NguyenDNT
                 .ToListAsync();
         }
 
-        public new async Task<JockeyNguyenDnt> GetByIdAsync(int id)
+        public new async Task<JockeyNguyenDnt?> GetByIdAsync(int id)
         {
             return await _context.JockeyNguyenDnts.FindAsync(id);
         }
 
-        public new async Task<bool> DeleteAsync(int id)
+        // Tìm theo 3 trường độc lập: FullName / Email / LicenseCode (AND giữa các ô có nhập)
+        public async Task<List<JockeyNguyenDnt>> SearchAsync(string? fullName, string? email, string? licenseCode)
+        {
+            var query = _context.JockeyNguyenDnts.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(fullName))
+                query = query.Where(j => j.FullName != null && j.FullName.Contains(fullName));
+
+            if (!string.IsNullOrWhiteSpace(email))
+                query = query.Where(j => j.Email != null && j.Email.Contains(email));
+
+            if (!string.IsNullOrWhiteSpace(licenseCode))
+                query = query.Where(j => j.LicenseCode != null && j.LicenseCode.Contains(licenseCode));
+
+            return await query
+                .OrderByDescending(j => j.JockeyNguyenDntid)
+                .ToListAsync();
+        }
+
+        public async Task<bool> DeleteAsync(int id)
         {
             var jockey = await _context.JockeyNguyenDnts.FindAsync(id);
             if (jockey == null) return false;

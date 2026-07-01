@@ -1,0 +1,53 @@
+@model RaceMS.Entities.NguyenDNT.Models.RegistrationNguyenDnt
+
+@{
+    ViewData["Title"] = "Xóa đăng ký";
+}
+
+<h1>Xóa đăng ký</h1>
+
+<h3 class="text-danger">Bạn có chắc chắn muốn xóa đăng ký này?</h3>
+<div>
+    <dl class="row">
+        <dt class="col-sm-2">@Html.DisplayNameFor(model => model.RaceName)</dt>
+        <dd class="col-sm-10">@Html.DisplayFor(model => model.RaceName)</dd>
+
+        <dt class="col-sm-2">@Html.DisplayNameFor(model => model.HorseName)</dt>
+        <dd class="col-sm-10">@Html.DisplayFor(model => model.HorseName)</dd>
+
+        <dt class="col-sm-2">@Html.DisplayNameFor(model => model.PrizeMoney)</dt>
+        <dd class="col-sm-10">@Html.DisplayFor(model => model.PrizeMoney)</dd>
+
+        <dt class="col-sm-2">@Html.DisplayNameFor(model => model.JockeyNguyenDntid)</dt>
+        <dd class="col-sm-10">@Html.DisplayFor(model => model.JockeyNguyenDntid)</dd>
+    </dl>
+
+    <form asp-action="Delete" method="post">
+        <input type="hidden" asp-for="RegistrationNguyenDntid" />
+        <input type="submit" value="Xóa" class="btn btn-danger" /> |
+        <button type="button" id="btnHubDelete" class="btn btn-warning">Xóa via SignalR</button>
+        <a asp-action="Index">Quay lại danh sách</a>
+    </form>
+</div>
+
+@section Scripts {
+    <script src="~/js/signalr/dist/browser/signalr.min.js"></script>
+    <script>
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/msRaceHub", { withCredentials: true })
+            .build();
+
+        connection.on("Receiver_DeleteRegistrationNguyenDnt", function (id) {
+            if (parseInt(id) === @Model.RegistrationNguyenDntid) {
+                window.location.href = "@Url.Action("Index", "RegistrationNguyenDnts")";
+            }
+        });
+
+        connection.start().catch(err => console.error(err.toString()));
+
+        document.getElementById("btnHubDelete").addEventListener("click", function (event) {
+            const id = @Model.RegistrationNguyenDntid;
+            connection.invoke("HubDelete_RegistrationNguyenDnt", id).catch(err => console.error(err.toString()));
+        });
+    </script>
+}

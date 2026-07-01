@@ -3,44 +3,84 @@
 }
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Forbidden - RaceMS</title>
+    <title>Không có quyền truy cập - RaceMS</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <style>
+        @@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap');
+
+        html, body { height: 100%; margin: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at 20% 20%, rgba(220,38,38,.15), transparent 40%),
+                        linear-gradient(135deg, #1a1a2e 0%, #16213e 55%, #0f3460 100%);
+            padding: 1.5rem;
+        }
+
+        .forbidden-card {
+            background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.08);
+            border-radius: 20px;
+            padding: 3rem 2.5rem;
+            max-width: 460px;
+            text-align: center;
+            box-shadow: 0 30px 80px rgba(0,0,0,.4);
+        }
+
+        .forbidden-icon { font-size: 3rem; margin-bottom: 1rem; }
+
+        .forbidden-card h1 {
+            font-family: 'Playfair Display', serif;
+            color: #fff;
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin: 0 0 .6rem;
+        }
+
+        .forbidden-card p {
+            color: #a5b4d4;
+            font-size: .9rem;
+            line-height: 1.6;
+            margin: 0 0 1.8rem;
+        }
+
+        .btn-back-login {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #7c3aed, #6d28d9);
+            color: #fff;
+            font-size: .9rem;
+            font-weight: 600;
+            padding: 11px 26px;
+            border-radius: 10px;
+            text-decoration: none;
+            box-shadow: 0 6px 18px rgba(109,40,217,.35);
+            transition: all .2s;
+        }
+
+        .btn-back-login:hover {
+            background: linear-gradient(135deg, #6d28d9, #5b21b6);
+            color: #fff;
+            transform: translateY(-1px);
+        }
+    </style>
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
-                    RaceMS - <span class="text-danger">PRN222</span>
-                </a>
-            </div>
-        </nav>
-    </header>
-
-    <div class="container">
-        <main role="main" class="pb-3">
-            <div class="row text-center">
-                <h3 class="text-danger">Forbidden</h3>
-                <h4 class="text-danger">You do not have permission to access this page!</h4>
-                <div class="mt-3">
-                    <a asp-action="Login" asp-controller="Account" class="btn btn-primary">Back to Login</a>
-                </div>
-            </div>
-        </main>
+    <div class="forbidden-card">
+        <div class="forbidden-icon">🚫</div>
+        <h1>Bạn không có quyền truy cập</h1>
+        <p>Tài khoản hiện tại không đủ quyền để xem trang này. Nếu bạn cho rằng đây là nhầm lẫn, hãy liên hệ quản trị viên.</p>
+        <a asp-action="Index" asp-controller="JockeyNguyenDnts" class="btn-back-login">← Quay lại trang chính</a>
     </div>
-
-    <footer class="border-top footer text-center">
-        <div class="container">
-            &copy; 2025 - RaceMS Management System
-        </div>
-    </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
 </body>
 </html>
