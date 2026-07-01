@@ -451,7 +451,7 @@
                     <button type="submit" class="btn-create" style="background:linear-gradient(135deg,#0369a1,#0284c7); box-shadow:0 4px 14px rgba(3,105,161,.35);">
                         ✚ Tạo Jockey
                     </button>
-                    <button type="button" id="btnHubCreate" class="btn-create">
+                    <button type="button" id="btnHubCreate" class="btn-create" disabled title="Đang kết nối tới server...">
                         ⚡ Tạo via SignalR
                     </button>
                 </div>
@@ -468,7 +468,21 @@
     <script>
         var connection = new signalR.HubConnectionBuilder()
             .withUrl("/msRaceHub", { withCredentials: true })
+            .withAutomaticReconnect()
             .build();
+
+        var btnHubCreate = document.getElementById("btnHubCreate");
+
+        // Nút chỉ được bấm khi kết nối THẬT SỰ đã sẵn sàng — tránh race condition
+        // (bấm trước khi connection.start() xong khiến invoke() thất bại âm thầm).
+        function setHubButtonReady(ready) {
+            btnHubCreate.disabled = !ready;
+            btnHubCreate.title = ready ? "" : "Đang kết nối tới server...";
+        }
+
+        connection.onreconnecting(function () { setHubButtonReady(false); });
+        connection.onreconnected(function () { setHubButtonReady(true); });
+        connection.onclose(function () { setHubButtonReady(false); });
 
         connection.on("Receiver_CreateJockeyNguyenDnt", function () {
             window.location.href = "@Url.Action("Index", "JockeyNguyenDnts")";
@@ -476,20 +490,25 @@
 
         connection.on("CreateError", function (message) {
             var text = message.startsWith(":") ? message.slice(1) : message;
-            var summary = document.querySelector(".jc-validation-summary");
-            if (summary) {
-                summary.style.display = "block";
-                summary.textContent = "⚠️ " + text;
-            }
+            showToast(text, "error");
         });
 
         connection.start().then(function () {
             console.log("SignalR Connected.");
+            setHubButtonReady(true);
         }).catch(function (err) {
-            return console.error(err.toString());
+            console.error(err.toString());
+            setHubButtonReady(false);
         });
 
-        document.getElementById("btnHubCreate").addEventListener("click", function (event) {
+        btnHubCreate.addEventListener("click", function (event) {
+            event.preventDefault();
+
+            if (connection.state !== signalR.HubConnectionState.Connected) {
+                showToast("Chưa kết nối được tới server, vui lòng thử lại sau giây lát.", "error");
+                return;
+            }
+
             var jockey = {
                 FullName:    document.getElementById("FullName").value,
                 PhoneNumber: document.getElementById("PhoneNumber").value,
@@ -501,10 +520,9 @@
             };
 
             connection.invoke("HubCreate_JockeyNguyenDnt", jockey).catch(function (err) {
-                return console.error(err.toString());
+                console.error(err.toString());
+                showToast("Không thể tạo qua SignalR: " + err.message, "error");
             });
-
-            event.preventDefault();
         });
     </script>
 }

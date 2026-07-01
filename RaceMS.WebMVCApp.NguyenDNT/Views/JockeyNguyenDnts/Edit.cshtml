@@ -50,7 +50,7 @@
             </div>
             <div class="form-group">
                 <input type="submit" value="Save" class="btn btn-primary" />
-                <button type="button" id="btnHubUpdate" value="Update via SignalR" class="btn btn-warning">
+                <button type="button" id="btnHubUpdate" value="Update via SignalR" class="btn btn-warning" disabled title="Đang kết nối tới server...">
                     Edit via Hub
                 </button>
             </div>
@@ -70,7 +70,21 @@
 
         var connection = new signalR.HubConnectionBuilder()
             .withUrl("/msRaceHub", { withCredentials: true })
+            .withAutomaticReconnect()
             .build();
+
+        var btnHubUpdate = document.getElementById("btnHubUpdate");
+
+        // Nút chỉ được bấm khi kết nối THẬT SỰ đã sẵn sàng — tránh race condition
+        // (bấm trước khi connection.start() xong khiến invoke() thất bại âm thầm).
+        function setHubButtonReady(ready) {
+            btnHubUpdate.disabled = !ready;
+            btnHubUpdate.title = ready ? "" : "Đang kết nối tới server...";
+        }
+
+        connection.onreconnecting(function () { setHubButtonReady(false); });
+        connection.onreconnected(function () { setHubButtonReady(true); });
+        connection.onclose(function () { setHubButtonReady(false); });
 
         connection.on("Receiver_EditJockeyNguyenDnt", function () {
             window.location.href = "@Url.Action("Index", "JockeyNguyenDnts")";
@@ -78,30 +92,25 @@
 
         connection.on("EditError", function (message) {
             var text = message && message.startsWith(":") ? message.slice(1) : message;
-            var summary = document.querySelector("[data-valmsg-summary='true']");
-
-            if (summary) {
-                summary.classList.add("text-danger");
-                summary.innerHTML = "";
-
-                var ul = document.createElement("ul");
-                var li = document.createElement("li");
-                li.textContent = text || "Update failed.";
-
-                ul.appendChild(li);
-                summary.appendChild(ul);
-            } else {
-                alert(text || "Update failed.");
-            }
+            showToast(text || "Cập nhật thất bại.", "error");
         });
 
         connection.start().then(function () {
             console.log("SignalR Connected.");
+            setHubButtonReady(true);
         }).catch(function (err) {
-            return console.error(err.toString());
+            console.error(err.toString());
+            setHubButtonReady(false);
         });
 
-        document.getElementById("btnHubUpdate").addEventListener("click", function (event) {
+        btnHubUpdate.addEventListener("click", function (event) {
+            event.preventDefault();
+
+            if (connection.state !== signalR.HubConnectionState.Connected) {
+                showToast("Chưa kết nối được tới server, vui lòng thử lại sau giây lát.", "error");
+                return;
+            }
+
             var jockey = {
                 JockeyNguyenDntid: parseInt(document.getElementById("JockeyNguyenDntid").value),
                 FullName: document.getElementById("FullName").value,
@@ -114,10 +123,9 @@
             };
 
             connection.invoke("HubEdit_JockeyNguyenDnt", jockey).catch(function (err) {
-                return console.error(err.toString());
+                console.error(err.toString());
+                showToast("Không thể cập nhật qua SignalR: " + err.message, "error");
             });
-
-            event.preventDefault();
         });
     </script>
 }

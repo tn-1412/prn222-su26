@@ -513,13 +513,6 @@
 
 <div class="jl-wrapper">
 
-    @if (TempData["Error"] != null)
-    {
-        <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:12px 18px;margin-bottom:1rem;color:#b91c1c;font-size:.875rem;font-family:'Inter',sans-serif;">
-            ⚠️ @TempData["Error"]
-        </div>
-    }
-
     <!-- HEADER -->
     <div class="jl-header">
         <div class="jl-header-left">
@@ -796,7 +789,7 @@
 
     connection.on("DeleteError", function (message) {
         const text = message.startsWith(":") ? message.slice(1) : message;
-        alert(text);
+        showToast(text, "error");
     });
 
     connection.on("Receiver_EditJockeyNguyenDnt", function (item) {
@@ -935,8 +928,17 @@
 
     function confirmDelete() {
         if (!_pendingDeleteId) return;
+
+        if (connection.state !== signalR.HubConnectionState.Connected) {
+            showToast("Chưa kết nối được tới server, vui lòng thử lại sau giây lát.", "error");
+            return;
+        }
+
         connection.invoke("HubDelete_JockeyNguyenDnt", parseInt(_pendingDeleteId))
-            .catch(err => console.error(err.toString()));
+            .catch(err => {
+                console.error(err.toString());
+                showToast("Không thể xóa qua SignalR: " + err.message, "error");
+            });
         closeDeleteModal();
     }
 

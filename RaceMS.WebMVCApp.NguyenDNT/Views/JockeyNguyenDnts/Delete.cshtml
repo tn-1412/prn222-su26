@@ -58,23 +58,63 @@
     <form asp-action="Delete">
         <input type="hidden" asp-for="JockeyNguyenDntid" />
         <input type="submit" value="Delete" class="btn btn-danger" /> |
-        <input type = "button" id=" btnHubDelete" value="Delete via SignalR" class="btn btn-warning"/>
+        <input type="button" id="btnHubDelete" value="Delete via SignalR" class="btn btn-warning" disabled title="Đang kết nối tới server..."/>
         <a asp-action="Index">Back to List</a>
     </form>
 </div>
 
 @section Scripts {
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.0/signalr.min.js"></script>
+    <script src="~/js/signalr/dist/browser/signalr.min.js"></script>
     <script>
         const connection = new signalR.HubConnectionBuilder()
-        .withUrl("/msRaceHub")
-        .build();
+            .withUrl("/msRaceHub", { withCredentials: true })
+            .withAutomaticReconnect()
+            .build();
 
-		/// Start the connection.
-        connection.start().catch(err => console.error(err.toString()));
-        document.getElementById("btnHubDelete").addEventListener("click", function (event) {
-        const id = @Model.JockeyNguyenDntid;
-        connection.invoke("HubDelete_JockeyNguyenDnt", id).catch(err => console.error(err.toString()));
+        const btnHubDelete = document.getElementById("btnHubDelete");
+
+        // Nút chỉ được bấm khi kết nối THẬT SỰ đã sẵn sàng — tránh race condition
+        // (bấm trước khi connection.start() xong khiến invoke() thất bại âm thầm).
+        function setHubButtonReady(ready) {
+            btnHubDelete.disabled = !ready;
+            btnHubDelete.title = ready ? "" : "Đang kết nối tới server...";
+        }
+
+        connection.onreconnecting(() => setHubButtonReady(false));
+        connection.onreconnected(() => setHubButtonReady(true));
+        connection.onclose(() => setHubButtonReady(false));
+
+        connection.on("Receiver_DeleteJockeyNguyenDnt", function (jockeyId) {
+            if (parseInt(jockeyId) === @Model.JockeyNguyenDntid) {
+                window.location.href = "@Url.Action("Index", "JockeyNguyenDnts")";
+            }
+        });
+
+        connection.on("DeleteError", function (message) {
+            const text = message && message.startsWith(":") ? message.slice(1) : message;
+            showToast(text || "Xóa thất bại.", "error");
+        });
+
+        connection.start().then(function () {
+            setHubButtonReady(true);
+        }).catch(function (err) {
+            console.error(err.toString());
+            setHubButtonReady(false);
+        });
+
+        btnHubDelete.addEventListener("click", function (event) {
+            event.preventDefault();
+
+            if (connection.state !== signalR.HubConnectionState.Connected) {
+                showToast("Chưa kết nối được tới server, vui lòng thử lại sau giây lát.", "error");
+                return;
+            }
+
+            const id = @Model.JockeyNguyenDntid;
+            connection.invoke("HubDelete_JockeyNguyenDnt", id).catch(function (err) {
+                console.error(err.toString());
+                showToast("Không thể xóa qua SignalR: " + err.message, "error");
+            });
         });
     </script>
 }

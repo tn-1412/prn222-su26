@@ -340,13 +340,6 @@
 
 <div class="rl-wrapper">
 
-    @if (TempData["Error"] != null)
-    {
-        <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:12px 18px;margin-bottom:1rem;color:#b91c1c;font-size:.875rem;font-family:'Inter',sans-serif;">
-            ⚠️ @TempData["Error"]
-        </div>
-    }
-
     <div class="rl-header">
         <div>
             <h1>🏆 Danh sách đăng ký đua</h1>
@@ -370,14 +363,14 @@
         <div class="rl-stat">
             <div class="rl-stat-icon">✅</div>
             <div class="rl-stat-info">
-                <div class="value">@confirmedCount</div>
+                <div class="value" id="rl-confirmed-count">@confirmedCount</div>
                 <div class="label">Đã xác nhận</div>
             </div>
         </div>
         <div class="rl-stat">
             <div class="rl-stat-icon">💰</div>
             <div class="rl-stat-info">
-                <div class="value">@totalPrize.ToString("N0")</div>
+                <div class="value" id="rl-total-prize">@totalPrize.ToString("N0")</div>
                 <div class="label">Tổng tiền thưởng</div>
             </div>
         </div>
@@ -492,6 +485,10 @@
 <script>
     "use strict";
 
+    // Quyền của user hiện tại — dùng để dựng đúng nút Edit/Delete trên row mới do SignalR broadcast tới
+    const canWrite = @Html.Raw(canWrite.ToString().ToLowerInvariant());
+    const canDelete = @Html.Raw(canDelete.ToString().ToLowerInvariant());
+
     const connection = new signalR.HubConnectionBuilder()
         .withUrl("/msRaceHub", { withCredentials: true })
         .build();
@@ -511,8 +508,17 @@
 
     function confirmDelete() {
         if (!_pendingDeleteId) return;
+
+        if (connection.state !== signalR.HubConnectionState.Connected) {
+            showToast("Chưa kết nối được tới server, vui lòng thử lại sau giây lát.", "error");
+            return;
+        }
+
         connection.invoke("HubDelete_RegistrationNguyenDnt", parseInt(_pendingDeleteId))
-            .catch(err => console.error(err.toString()));
+            .catch(err => {
+                console.error(err.toString());
+                showToast("Không thể xóa qua SignalR: " + err.message, "error");
+            });
         closeDeleteModal();
     }
 
@@ -525,16 +531,92 @@
         el.textContent = (parseInt(el.textContent) || 0) + delta;
     }
 
+    function updateConfirmedCount(delta) {
+        var el = document.getElementById("rl-confirmed-count");
+        el.textContent = (parseInt(el.textContent) || 0) + delta;
+    }
+
+    function formatDate(value) {
+        return value ? new Date(value).toLocaleDateString('vi-VN') : '—';
+    }
+
+    function formatPrize(value) {
+        return value != null ? Number(value).toLocaleString('vi-VN') : '—';
+    }
+
+    function statusBadgeHtml(isConfirmed) {
+        return isConfirmed
+            ? '<span class="rl-badge-confirmed">● Đã xác nhận</span>'
+            : '<span class="rl-badge-pending">● Chờ xác nhận</span>';
+    }
+
     // Nhận broadcast xóa từ SignalR — xóa row khỏi DOM ở tất cả tab đang mở
     connection.on("Receiver_DeleteRegistrationNguyenDnt", function (id) {
         var row = document.getElementById(`registration-row-${id}`);
         if (!row) return;
+        if (row.dataset.status === "confirmed") updateConfirmedCount(-1);
         row.remove();
         updateTotalCount(-1);
     });
 
+    // Nhận broadcast tạo mới từ SignalR — chèn row mới lên đầu bảng ở tất cả tab đang mở
+    connection.on("Receiver_CreateRegistrationNguyenDnt", function (item) {
+        var tr = `
+            <tr id="registration-row-${item.registrationNguyenDntid}" data-status="${item.isConfirmed ? 'confirmed' : 'pending'}">
+                <td><span class="rl-race-code">#${item.registrationNguyenDntid}</span></td>
+                <td>${item.raceName || ''}</td>
+                <td>
+                    <div class="rl-horse-cell">
+                        <span class="rl-horse-avatar">🐎</span>
+                        <span>${item.horseName || ''}</span>
+                    </div>
+                </td>
+                <td>${formatDate(item.registeredDate)}</td>
+                <td>${formatDate(item.responseDate)}</td>
+                <td>${formatPrize(item.prizeMoney)}</td>
+                <td>${statusBadgeHtml(item.isConfirmed)}</td>
+                <td>${item.jockeyNguyenDntid ?? '—'}</td>
+                <td>
+                    <div class="rl-action-group">
+                        ${canWrite ? `<a href="/RegistrationNguyenDnts/Edit/${item.registrationNguyenDntid}" class="rl-btn-action rl-btn-edit" title="Chỉnh sửa">✏️</a>` : ''}
+                        <a href="/RegistrationNguyenDnts/Details/${item.registrationNguyenDntid}" class="rl-btn-action rl-btn-detail" title="Chi tiết">👁</a>
+                        ${canDelete ? `<button class="rl-btn-action rl-btn-del" title="Xóa" onclick="openDeleteModal(this)" data-id="${item.registrationNguyenDntid}" data-race-name="${item.raceName || ''}">🗑</button>` : ''}
+                    </div>
+                </td>
+            </tr>`;
+
+        $('#registrationTableBody').prepend(tr);
+        updateTotalCount(1);
+        if (item.isConfirmed) updateConfirmedCount(1);
+    });
+
+    // Nhận broadcast sửa từ SignalR — cập nhật đúng row tại chỗ ở tất cả tab đang mở
+    connection.on("Receiver_EditRegistrationNguyenDnt", function (item) {
+        var row = document.getElementById(`registration-row-${item.registrationNguyenDntid}`);
+        if (!row) return;
+
+        var oldStatus = row.dataset.status;
+        var newStatus = item.isConfirmed ? "confirmed" : "pending";
+        if (oldStatus !== newStatus) {
+            updateConfirmedCount(newStatus === "confirmed" ? 1 : -1);
+        }
+        row.dataset.status = newStatus;
+
+        row.cells[1].textContent = item.raceName || '';
+        row.cells[2].innerHTML = `<div class="rl-horse-cell"><span class="rl-horse-avatar">🐎</span><span>${item.horseName || ''}</span></div>`;
+        row.cells[3].textContent = formatDate(item.registeredDate);
+        row.cells[4].textContent = formatDate(item.responseDate);
+        row.cells[5].textContent = formatPrize(item.prizeMoney);
+        row.cells[6].innerHTML = statusBadgeHtml(item.isConfirmed);
+        row.cells[7].textContent = item.jockeyNguyenDntid ?? '—';
+
+        var deleteBtn = row.querySelector(".rl-btn-del");
+        if (deleteBtn) deleteBtn.dataset.raceName = item.raceName || '';
+    });
+
     connection.on("DeleteError", function (message) {
-        alert(message && message.startsWith(":") ? message.slice(1) : message);
+        const text = message && message.startsWith(":") ? message.slice(1) : message;
+        showToast(text || "Xóa thất bại.", "error");
     });
 
     connection.start().catch(err => console.error(err.toString()));

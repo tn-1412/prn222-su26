@@ -169,7 +169,7 @@
                     <button type="submit" class="btn-create" style="background:linear-gradient(135deg,#0369a1,#0284c7);">
                         💾 Lưu thay đổi
                     </button>
-                    <button type="button" id="btnHubUpdate" class="btn-create">
+                    <button type="button" id="btnHubUpdate" class="btn-create" disabled title="Đang kết nối tới server...">
                         ⚡ Sửa via SignalR
                     </button>
                 </div>
@@ -186,7 +186,21 @@
 
         var connection = new signalR.HubConnectionBuilder()
             .withUrl("/msRaceHub", { withCredentials: true })
+            .withAutomaticReconnect()
             .build();
+
+        var btnHubUpdate = document.getElementById("btnHubUpdate");
+
+        // Nút chỉ được bấm khi kết nối THẬT SỰ đã sẵn sàng — tránh race condition
+        // (bấm trước khi connection.start() xong khiến invoke() thất bại âm thầm).
+        function setHubButtonReady(ready) {
+            btnHubUpdate.disabled = !ready;
+            btnHubUpdate.title = ready ? "" : "Đang kết nối tới server...";
+        }
+
+        connection.onreconnecting(function () { setHubButtonReady(false); });
+        connection.onreconnected(function () { setHubButtonReady(true); });
+        connection.onclose(function () { setHubButtonReady(false); });
 
         connection.on("Receiver_EditRegistrationNguyenDnt", function () {
             window.location.href = "@Url.Action("Index", "RegistrationNguyenDnts")";
@@ -194,18 +208,24 @@
 
         connection.on("EditError", function (message) {
             var text = message && message.startsWith(":") ? message.slice(1) : message;
-            var summary = document.querySelector(".rc-validation-summary");
-            if (summary) {
-                summary.style.display = "block";
-                summary.textContent = "⚠️ " + (text || "Cập nhật thất bại.");
-            } else {
-                alert(text || "Cập nhật thất bại.");
-            }
+            showToast(text || "Cập nhật thất bại.", "error");
         });
 
-        connection.start().catch(function (err) { console.error(err.toString()); });
+        connection.start().then(function () {
+            setHubButtonReady(true);
+        }).catch(function (err) {
+            console.error(err.toString());
+            setHubButtonReady(false);
+        });
 
-        document.getElementById("btnHubUpdate").addEventListener("click", function (event) {
+        btnHubUpdate.addEventListener("click", function (event) {
+            event.preventDefault();
+
+            if (connection.state !== signalR.HubConnectionState.Connected) {
+                showToast("Chưa kết nối được tới server, vui lòng thử lại sau giây lát.", "error");
+                return;
+            }
+
             var registration = {
                 RegistrationNguyenDntid: parseInt(document.getElementById("RegistrationNguyenDntid").value),
                 RaceName: document.getElementById("RaceName").value,
@@ -220,9 +240,8 @@
 
             connection.invoke("HubEdit_RegistrationNguyenDnt", registration).catch(function (err) {
                 console.error(err.toString());
+                showToast("Không thể cập nhật qua SignalR: " + err.message, "error");
             });
-
-            event.preventDefault();
         });
     </script>
 }

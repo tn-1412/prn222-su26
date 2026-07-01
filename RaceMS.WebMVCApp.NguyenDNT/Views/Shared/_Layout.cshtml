@@ -90,9 +90,66 @@
             border-color: #dc2626;
             color: #fff;
         }
+
+        /* ── TOAST NOTIFICATION ── */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 380px;
+        }
+
+        .toast {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 13px 16px;
+            border-radius: 10px;
+            font-family: 'Inter', sans-serif;
+            font-size: .85rem;
+            line-height: 1.45;
+            box-shadow: 0 10px 30px rgba(0,0,0,.18);
+            animation: toast-in .25s ease-out;
+        }
+
+        .toast-icon { font-size: 1rem; flex-shrink: 0; }
+        .toast-message { flex: 1; word-break: break-word; }
+
+        .toast-close {
+            cursor: pointer;
+            opacity: .55;
+            font-size: .8rem;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+
+        .toast-close:hover { opacity: 1; }
+
+        .toast-error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #b91c1c;
+        }
+
+        .toast-success {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #15803d;
+        }
+
+        @@keyframes toast-in {
+            from { opacity: 0; transform: translateX(24px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
     </style>
 </head>
 <body>
+    <div id="toastContainer" class="toast-container"></div>
+
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm app-navbar mb-3">
             <div class="container-fluid">
@@ -151,6 +208,43 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        // Popup thông báo nhỏ dùng chung toàn app — không chặn thao tác, tự biến mất sau vài giây.
+        function showToast(message, type) {
+            type = type === 'success' ? 'success' : 'error';
+            var container = document.getElementById('toastContainer');
+            if (!container || !message) return;
+
+            var toast = document.createElement('div');
+            toast.className = 'toast toast-' + type;
+            toast.innerHTML =
+                '<span class="toast-icon">' + (type === 'success' ? '✅' : '⚠️') + '</span>' +
+                '<span class="toast-message"></span>' +
+                '<span class="toast-close">✕</span>';
+            toast.querySelector('.toast-message').textContent = message;
+            toast.querySelector('.toast-close').addEventListener('click', function () { toast.remove(); });
+
+            container.appendChild(toast);
+            setTimeout(function () { toast.remove(); }, 6000);
+        }
+    </script>
+    @{
+        // Tự động hiện toast khi form submit thất bại validate (ModelState invalid) —
+        // áp dụng cho MỌI trang dùng layout này (Jockey/Registration Create & Edit) mà không cần sửa từng view.
+        if (!ViewData.ModelState.IsValid)
+        {
+            var firstError = ViewData.ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).FirstOrDefault(e => !string.IsNullOrWhiteSpace(e));
+            if (!string.IsNullOrWhiteSpace(firstError))
+            {
+                <script>showToast(@Json.Serialize(firstError), 'error');</script>
+            }
+        }
+
+        if (TempData.Peek("Error") != null)
+        {
+            <script>showToast(@Json.Serialize(TempData.Peek("Error")), 'error');</script>
+        }
+    }
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
