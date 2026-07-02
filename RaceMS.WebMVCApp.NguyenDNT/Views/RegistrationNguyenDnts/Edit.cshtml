@@ -103,7 +103,7 @@
     </div>
 
     <div class="rc-body">
-        <form asp-action="Edit" method="post">
+        <form asp-action="Edit" method="post" novalidate>
             <input type="hidden" asp-for="RegistrationNguyenDntid" />
             <div asp-validation-summary="ModelOnly" class="rc-validation-summary text-danger"></div>
 

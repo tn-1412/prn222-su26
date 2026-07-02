@@ -258,7 +258,8 @@
         .switch-link a:hover { text-decoration: underline; }
 
         /* ── TOAST NOTIFICATION ── */
-        .toast-container {
+        /* Tiền tố "rms-" để KHÔNG trùng tên với component .toast có sẵn của Bootstrap. */
+        .rms-toast-container {
             position: fixed;
             top: 20px;
             right: 20px;
@@ -269,7 +270,7 @@
             max-width: 380px;
         }
 
-        .toast {
+        .rms-toast {
             display: flex;
             align-items: flex-start;
             gap: 10px;
@@ -279,17 +280,17 @@
             font-size: .85rem;
             line-height: 1.45;
             box-shadow: 0 10px 30px rgba(0,0,0,.18);
-            animation: toast-in .25s ease-out;
+            animation: rms-toast-in .25s ease-out;
         }
 
-        .toast-icon { font-size: 1rem; flex-shrink: 0; }
-        .toast-message { flex: 1; word-break: break-word; }
-        .toast-close { cursor: pointer; opacity: .55; font-size: .8rem; flex-shrink: 0; line-height: 1; }
-        .toast-close:hover { opacity: 1; }
-        .toast-error { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
-        .toast-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
+        .rms-toast-icon { font-size: 1rem; flex-shrink: 0; }
+        .rms-toast-message { flex: 1; word-break: break-word; }
+        .rms-toast-close { cursor: pointer; opacity: .55; font-size: .8rem; flex-shrink: 0; line-height: 1; }
+        .rms-toast-close:hover { opacity: 1; }
+        .rms-toast-error { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
+        .rms-toast-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
 
-        @@keyframes toast-in {
+        @@keyframes rms-toast-in {
             from { opacity: 0; transform: translateX(24px); }
             to { opacity: 1; transform: translateX(0); }
         }
@@ -302,7 +303,7 @@
 </head>
 <body>
 
-    <div id="toastContainer" class="toast-container"></div>
+    <div id="rmsToastContainer" class="rms-toast-container"></div>
 
     <div class="login-shell">
 
@@ -362,17 +363,17 @@
     <script>
         function showToast(message, type) {
             type = type === 'success' ? 'success' : 'error';
-            var container = document.getElementById('toastContainer');
+            var container = document.getElementById('rmsToastContainer');
             if (!container || !message) return;
 
             var toast = document.createElement('div');
-            toast.className = 'toast toast-' + type;
+            toast.className = 'rms-toast rms-toast-' + type;
             toast.innerHTML =
-                '<span class="toast-icon">' + (type === 'success' ? '✅' : '⚠️') + '</span>' +
-                '<span class="toast-message"></span>' +
-                '<span class="toast-close">✕</span>';
-            toast.querySelector('.toast-message').textContent = message;
-            toast.querySelector('.toast-close').addEventListener('click', function () { toast.remove(); });
+                '<span class="rms-toast-icon">' + (type === 'success' ? '✅' : '⚠️') + '</span>' +
+                '<span class="rms-toast-message"></span>' +
+                '<span class="rms-toast-close">✕</span>';
+            toast.querySelector('.rms-toast-message').textContent = message;
+            toast.querySelector('.rms-toast-close').addEventListener('click', function () { toast.remove(); });
 
             container.appendChild(toast);
             setTimeout(function () { toast.remove(); }, 6000);
